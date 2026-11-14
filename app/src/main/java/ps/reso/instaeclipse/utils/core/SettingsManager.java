@@ -250,6 +250,20 @@ public class SettingsManager {
         if (prefs == null) {
             prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         }
+        if (hostProcess && !prefs.getBoolean("__mcCleanedV4", false)) {
+            try {
+                java.io.File mcFile = new java.io.File(context.getFilesDir(), "mobileconfig/mc_overrides.json");
+                java.io.File mcMarker = new java.io.File(context.getFilesDir(), "mobileconfig/ie_spoof_overrides_applied");
+                if (mcFile.exists()) {
+                    ps.reso.instaeclipse.utils.core.AtomicFiles.write(mcFile, "{}");
+                }
+                if (mcMarker.exists()) {
+                    //noinspection ResultOfMethodCallIgnored
+                    mcMarker.delete();
+                }
+            } catch (Throwable ignored) {}
+            prefs.edit().putBoolean("__mcCleanedV4", true).commit();
+        }
         if (ps.reso.instaeclipse.utils.feature.LitePreset.seedIfFirstRun(prefs)) {
             ps.reso.instaeclipse.utils.feature.LitePreset.writeToPrefs(prefs, 0);
         }

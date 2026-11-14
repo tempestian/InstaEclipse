@@ -34,6 +34,8 @@ public class LitePresetTest {
         FeatureFlags.hideShareCreateGroup = false;
         FeatureFlags.confirmCalls = false;
         FeatureFlags.offerPlaybackSpeed = true;
+        FeatureFlags.expandCaptions = true;
+        FeatureFlags.hideInstants = false;
         FeatureFlags.customThemeEnabled = false;
         FeatureFlags.eclipseModernUi = false;
         FeatureFlags.feedCornerRadius = 0;
@@ -50,7 +52,7 @@ public class LitePresetTest {
         assertTrue(FeatureFlags.isAdBlockEnabled);
         assertTrue(FeatureFlags.isAnalyticsBlocked);
         assertTrue(FeatureFlags.disableTrackingLinks);
-        // Seen, Typing, and Story View must be OFF in LitePreset V3 while Screenshot/View-Once stay ON
+        // Seen, Typing, and Story View must be OFF in LitePreset V4 while Screenshot/View-Once stay ON
         assertFalse(FeatureFlags.isGhostSeen);
         assertFalse(FeatureFlags.isGhostTyping);
         assertFalse(FeatureFlags.isGhostStory);
@@ -69,11 +71,14 @@ public class LitePresetTest {
         assertEquals(Integer.MAX_VALUE, FeatureFlags.forceReelQuality);
         assertTrue(FeatureFlags.hideShareCreateGroup);
         assertTrue(FeatureFlags.confirmCalls);
-        // offerPlaybackSpeed stays false by default so Reels/Post overflow menus never carry debug rows
+        // offerPlaybackSpeed & expandCaptions stay false so ⋮ menu and Reels stay clean
         assertFalse(FeatureFlags.offerPlaybackSpeed);
+        assertFalse(FeatureFlags.expandCaptions);
+        assertTrue(FeatureFlags.hideInstants);
+        assertTrue(FeatureFlags.removeMetaAI);
         assertTrue(FeatureFlags.holdLeftSlowMotion);
         assertTrue(FeatureFlags.forceReelScrubber);
-        // V3 Eclipse Neo-OLED Modern UI defaults
+        // V4 Eclipse Neo-OLED Modern UI defaults
         assertTrue(FeatureFlags.customThemeEnabled);
         assertTrue(FeatureFlags.eclipseModernUi);
         assertEquals(0, FeatureFlags.themePresetId);
@@ -95,10 +100,11 @@ public class LitePresetTest {
     }
 
     @Test
-    public void seedMigratesV2UsersToV3WithoutClobberingExistingPrivacyToggles() {
+    public void seedMigratesAnyPreviousInstallToV4AndStampsIgTimestamps() {
         Map<String, Object> store = new HashMap<>();
-        store.put("__litePresetInitializedV2", Boolean.TRUE);
+        store.put("isAdBlockEnabled", Boolean.TRUE);
         store.put("isGhostSeen", Boolean.TRUE);
+        store.put("expandCaptions", Boolean.TRUE);
         store.put("offerPlaybackSpeed", Boolean.TRUE);
         SharedPreferences prefs = mapPrefs(store);
 
@@ -109,10 +115,15 @@ public class LitePresetTest {
         assertEquals(Boolean.TRUE, store.get("customThemeEnabled"));
         assertEquals(Boolean.TRUE, store.get("eclipseModernUi"));
         assertEquals(Boolean.FALSE, store.get("offerPlaybackSpeed"));
+        assertEquals(Boolean.FALSE, store.get("expandCaptions"));
+        assertEquals(Boolean.TRUE, store.get("hideInstants"));
+        assertEquals(Boolean.TRUE, store.get("removeMetaAI"));
         assertEquals(LitePreset.ECLIPSE_FEED_CORNER_RADIUS, store.get("feedCornerRadius"));
         assertEquals(LitePreset.ECLIPSE_STORY_TRAY_SCALE, store.get("storyTrayScale"));
         assertEquals(LitePreset.ECLIPSE_STORY_RING_COLOR, store.get("storyRingColor"));
         assertEquals(LitePreset.ECLIPSE_PALETTE_JSON, store.get("themePaletteJson"));
+        assertTrue(store.containsKey("__igts_customThemeEnabled"));
+        assertTrue(store.containsKey("__igts_expandCaptions"));
         // Unrelated user toggle preserved
         assertEquals(Boolean.TRUE, store.get("isGhostSeen"));
     }

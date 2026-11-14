@@ -100,7 +100,7 @@ public final class RoundedFeedPostsHook {
                     android.graphics.drawable.GradientDrawable border = new android.graphics.drawable.GradientDrawable();
                     border.setCornerRadius(radius);
                     border.setColor(0x00000000);
-                    border.setStroke(Math.max(1, Math.round(1.0f * density)), 0xFF23304C);
+                    border.setStroke(Math.max(2, Math.round(1.5f * density)), 0xFF2E4975);
                     v.setForeground(border);
                     v.setTag(STROKE_TAG, Boolean.TRUE);
                 }

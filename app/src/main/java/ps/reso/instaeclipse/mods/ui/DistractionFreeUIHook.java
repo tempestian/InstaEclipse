@@ -45,8 +45,18 @@ public class DistractionFreeUIHook {
     // Disable Discover People: the profile's "Discover people" carousel (IG shows cached
     // suggestions even when the network drop blocks new ones).
     private static int discoverPeopleId = 0;
-    // Hide Instants: the stack of Instants (quicksnap) photos floating over the app.
-    private static int instantsId = 0;
+    // Hide Instants (Şipşak): floating preview + DM inbox Quicksnap camera/entry buttons.
+    private static final String[] INSTANT_VIEW_NAMES = {
+            "direct_quick_snap_consumption_preview",
+            "quick_snap_camera_button",
+            "quicksnap_camera_button",
+            "direct_inbox_quick_snap",
+            "quick_snap_entrypoint",
+            "quicksnap_entrypoint",
+            "direct_quick_snap_entrypoint",
+            "quick_snap_preview_container"
+    };
+    private static final int[] instantViewIds = new int[INSTANT_VIEW_NAMES.length];
 
     private static boolean navTabHidden(int index) {
         switch (index) {
@@ -95,7 +105,8 @@ public class DistractionFreeUIHook {
             for (int i = 0; i < PLUS_UPSELL_NAMES.length; i++)
                 plusUpsellIds[i] = res.getIdentifier(PLUS_UPSELL_NAMES[i], "id", pkg);
             discoverPeopleId = res.getIdentifier("similar_accounts_container", "id", pkg);
-            instantsId = res.getIdentifier("direct_quick_snap_consumption_preview", "id", pkg);
+            for (int i = 0; i < INSTANT_VIEW_NAMES.length; i++)
+                instantViewIds[i] = res.getIdentifier(INSTANT_VIEW_NAMES[i], "id", pkg);
             idsResolved = true;
             ModuleLog.line("(IE|DistractUI) resolved: tray=" + trayId + " clipsTab=" + clipsTabId);
         } catch (Throwable ignored) {}
@@ -137,13 +148,53 @@ public class DistractionFreeUIHook {
                 ps.reso.instaeclipse.utils.feature.FeatureStatusTracker.setHooked("HidePlusUpsells");
             }
             if (FeatureFlags.disableDiscoverPeople && discoverPeopleId != 0) collapseAllById((ViewGroup) root, discoverPeopleId);
-            if (FeatureFlags.hideInstants && instantsId != 0) {
-                collapseAllById((ViewGroup) root, instantsId);
+            if (FeatureFlags.hideInstants) {
+                for (int id : instantViewIds) if (id != 0) collapseAllById((ViewGroup) root, id);
+                hideQuicksnapViews(a, (ViewGroup) root);
                 ps.reso.instaeclipse.utils.feature.FeatureStatusTracker.setHooked("HideInstants");
             }
             if (!FeatureFlags.navTabOrder.isEmpty()) reorderTabs(a, (ViewGroup) root);
             if (FeatureFlags.eclipseModernUi) styleBottomNavDock(a, (ViewGroup) root);
         } catch (Throwable ignored) {}
+    }
+
+    /** Collapses Quicksnap (Şipşak) buttons and previews dynamically by class or resource name. */
+    private static void hideQuicksnapViews(Activity a, ViewGroup root) {
+        Resources res = a.getResources();
+        hideQuicksnapRecursive(res, root);
+    }
+
+    private static void hideQuicksnapRecursive(Resources res, View v) {
+        if (v == null || v.getVisibility() == View.GONE) return;
+        int id = v.getId();
+        if (id != View.NO_ID && id > 0) {
+            try {
+                String entry = res.getResourceEntryName(id);
+                if ("message_list".equals(entry)) return;
+                String lower = entry.toLowerCase(java.util.Locale.ROOT);
+                if (lower.contains("quick_snap") || lower.contains("quicksnap")) {
+                    collapse(v);
+                    return;
+                }
+            } catch (Throwable ignored) {}
+        }
+        String cls = v.getClass().getName();
+        if (cls.startsWith("com.instagram.quicksnap.")) {
+            collapse(v);
+            return;
+        }
+        CharSequence desc = v.getContentDescription();
+        if (desc != null && (desc.toString().equalsIgnoreCase("Şipşak")
+                || desc.toString().equalsIgnoreCase("Quicksnap")
+                || desc.toString().equalsIgnoreCase("Quick Snap"))) {
+            collapse(v);
+            return;
+        }
+        if (v instanceof ViewGroup vg) {
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                hideQuicksnapRecursive(res, vg.getChildAt(i));
+            }
+        }
     }
 
     private static final int NAV_DOCK_TAG = 0x7e1e0299;
@@ -154,25 +205,36 @@ public class DistractionFreeUIHook {
         int feedId = a.getResources().getIdentifier("feed_tab", "id", a.getPackageName());
         View feed = feedId != 0 ? root.findViewById(feedId) : null;
         if (feed == null || !(feed.getParent() instanceof ViewGroup bar)) return;
-        if (bar.getTag(NAV_DOCK_TAG) != null) return;
-        bar.setTag(NAV_DOCK_TAG, Boolean.TRUE);
         float d = a.getResources().getDisplayMetrics().density;
-        android.graphics.drawable.GradientDrawable dock = new android.graphics.drawable.GradientDrawable();
-        dock.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
-        dock.setColor(0xF0090E1A);
-        dock.setCornerRadius(22f * d);
-        dock.setStroke(Math.max(1, (int) (1f * d)), 0xFF233252);
-        bar.setBackground(dock);
-        bar.setClipToOutline(true);
-        bar.setElevation(8f * d);
-        if (bar.getLayoutParams() instanceof ViewGroup.MarginLayoutParams lp
-                && lp.leftMargin == 0 && lp.rightMargin == 0) {
-            int hMargin = (int) (10f * d);
-            int bMargin = (int) (4f * d);
-            lp.leftMargin = hMargin;
-            lp.rightMargin = hMargin;
-            lp.bottomMargin = Math.max(lp.bottomMargin, bMargin);
-            bar.setLayoutParams(lp);
+        android.graphics.drawable.GradientDrawable dock;
+        Object tagged = bar.getTag(NAV_DOCK_TAG);
+        if (tagged instanceof android.graphics.drawable.GradientDrawable existing) {
+            dock = existing;
+        } else {
+            dock = new android.graphics.drawable.GradientDrawable();
+            dock.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+            dock.setColor(0xF20D1528);
+            dock.setCornerRadius(24f * d);
+            dock.setStroke(Math.max(2, (int) (1.5f * d)), 0x9900E5FF);
+            bar.setTag(NAV_DOCK_TAG, dock);
+            bar.setClipToOutline(true);
+            bar.setElevation(10f * d);
+            int vPad = (int) (2f * d);
+            if (bar.getPaddingTop() == 0 && bar.getPaddingBottom() == 0) {
+                bar.setPadding(bar.getPaddingLeft(), vPad, bar.getPaddingRight(), vPad);
+            }
+            if (bar.getLayoutParams() instanceof ViewGroup.MarginLayoutParams lp
+                    && lp.leftMargin == 0 && lp.rightMargin == 0) {
+                int hMargin = (int) (12f * d);
+                int bMargin = (int) (6f * d);
+                lp.leftMargin = hMargin;
+                lp.rightMargin = hMargin;
+                lp.bottomMargin = Math.max(lp.bottomMargin, bMargin);
+                bar.setLayoutParams(lp);
+            }
+        }
+        if (bar.getBackground() != dock) {
+            bar.setBackground(dock);
         }
     }
 

@@ -10,8 +10,7 @@ import android.content.SharedPreferences;
  */
 public final class LitePreset {
 
-    public static final String PREF_INITIALIZED = "__litePresetInitializedV3";
-    private static final String PREF_PREVIOUS_V2 = "__litePresetInitializedV2";
+    public static final String PREF_INITIALIZED = "__litePresetInitializedV4";
 
     public static final int ECLIPSE_FEED_CORNER_RADIUS = 24;
     public static final int ECLIPSE_STORY_TRAY_SCALE = 86;
@@ -20,18 +19,18 @@ public final class LitePreset {
 
     private static String buildEclipsePaletteJson() {
         return "{"
-                + "\"background\":" + 0xFF000000 + ","
-                + "\"surface\":" + 0xFF0B0F19 + ","
-                + "\"primaryText\":" + 0xFFF0F5FF + ","
-                + "\"secondaryText\":" + 0xFF7E8CA8 + ","
+                + "\"background\":" + 0xFF060A14 + ","
+                + "\"surface\":" + 0xFF0E1528 + ","
+                + "\"primaryText\":" + 0xFFF2F7FF + ","
+                + "\"secondaryText\":" + 0xFF8A9BBC + ","
                 + "\"accent\":" + 0xFF00E5FF + ","
                 + "\"button\":" + 0xFF6C5CE7 + ","
-                + "\"icon\":" + 0xFFCFE2FF + ","
+                + "\"icon\":" + 0xFFD4ECFF + ","
                 + "\"glyph\":" + 0xFF00E5FF + ","
-                + "\"divider\":" + 0xFF1B2336 + ","
-                + "\"border\":" + 0xFF24304A + ","
-                + "\"statusBar\":" + 0xFF000000 + ","
-                + "\"navigation\":" + 0xFF070A12 + ","
+                + "\"divider\":" + 0xFF1F2D4D + ","
+                + "\"border\":" + 0xFF2D4373 + ","
+                + "\"statusBar\":" + 0xFF060A14 + ","
+                + "\"navigation\":" + 0xFF080D1B + ","
                 + "\"link\":" + 0xFF38BDF8 + ","
                 + "\"error\":" + 0xFFFF4D6D + ","
                 + "\"destructive\":" + 0xFFFF2E7E
@@ -57,17 +56,17 @@ public final class LitePreset {
             "disableDiscoverPeople", "hideOnboardingPrompts",
             // Reels & Feed UX + Eclipse Neo-OLED Modern UI
             "forceReelScrubber", "holdLeftSlowMotion",
-            "exactTimestamps", "expandCaptions", "customThemeEnabled", "eclipseModernUi",
+            "exactTimestamps", "customThemeEnabled", "eclipseModernUi",
             // Clean Feed & DM (#13, #14)
             "hideSuggestionsInFeed", "hideThreadsSuggestions", "removeMetaAI",
-            "hidePlusUpsells", "hideNotesTray", "hideDmSuggestions",
+            "hidePlusUpsells", "hideNotesTray", "hideInstants", "hideDmSuggestions",
             "hideDmBlend", "hideThreadsButton", "profileFollowsYouLabel",
             // Performance, Battery & Cache (#20)
             "activeHooksOnly", "litePerformanceMode", "batteryPrefetchLimiter", "autoClearCache"
     };
 
     public static final String[] PRESET_FALSE_KEYS = {
-            "isGhostSeen", "isGhostTyping", "isGhostStory", "offerPlaybackSpeed"
+            "isGhostSeen", "isGhostTyping", "isGhostStory", "offerPlaybackSpeed", "expandCaptions"
     };
 
     private LitePreset() {}
@@ -127,7 +126,7 @@ public final class LitePreset {
         FeatureFlags.offerPlaybackSpeed = false;
         FeatureFlags.holdLeftSlowMotion = true;
         FeatureFlags.exactTimestamps = true;
-        FeatureFlags.expandCaptions = true;
+        FeatureFlags.expandCaptions = false;
         applyVisualDefaults();
 
         // Clean Feed & DM
@@ -136,6 +135,7 @@ public final class LitePreset {
         FeatureFlags.removeMetaAI = true;
         FeatureFlags.hidePlusUpsells = true;
         FeatureFlags.hideNotesTray = true;
+        FeatureFlags.hideInstants = true;
         FeatureFlags.hideDmSuggestions = true;
         FeatureFlags.hideDmBlend = true;
         FeatureFlags.hideThreadsButton = true;
@@ -151,7 +151,7 @@ public final class LitePreset {
         }
     }
 
-    /** Applies V3 visual overhaul tokens (Neo-OLED theme, floating dock, cyber cards, neon rings). */
+    /** Applies V4 visual overhaul tokens (Neo-OLED theme, floating dock, cyber cards, neon rings). */
     public static void applyVisualDefaults() {
         FeatureFlags.customThemeEnabled = true;
         FeatureFlags.eclipseModernUi = true;
@@ -164,26 +164,11 @@ public final class LitePreset {
     }
 
     /**
-     * Seeds the preset once on a fresh install, or upgrades a V2 preset user once to V3 visual
-     * defaults + safer menu defaults without clobbering unrelated user toggles.
+     * Seeds the preset once on a fresh install, or upgrades any previous installation once to V4
+     * visual/cleanliness defaults (without clobbering unrelated user Ghost Mode choices).
      */
     public static boolean seedIfFirstRun(SharedPreferences prefs) {
         if (prefs == null || prefs.getBoolean(PREF_INITIALIZED, false)) {
-            return false;
-        }
-        if (prefs.getBoolean(PREF_PREVIOUS_V2, false)) {
-            SharedPreferences.Editor ed = prefs.edit();
-            ed.putBoolean("customThemeEnabled", true);
-            ed.putBoolean("eclipseModernUi", true);
-            ed.putBoolean("offerPlaybackSpeed", false);
-            ed.putInt("themePresetId", 0);
-            ed.putInt("themeLightPresetId", -1);
-            ed.putString("themePaletteJson", ECLIPSE_PALETTE_JSON);
-            ed.putInt("feedCornerRadius", ECLIPSE_FEED_CORNER_RADIUS);
-            ed.putInt("storyTrayScale", ECLIPSE_STORY_TRAY_SCALE);
-            ed.putString("storyRingColor", ECLIPSE_STORY_RING_COLOR);
-            ed.putBoolean(PREF_INITIALIZED, true);
-            ed.apply();
             return false;
         }
         boolean hasExisting = prefs.contains("isAdBlockEnabled")
@@ -191,12 +176,47 @@ public final class LitePreset {
                 || prefs.contains("enablePostDownload")
                 || prefs.contains("isDevEnabled");
         if (hasExisting) {
-            prefs.edit().putBoolean(PREF_INITIALIZED, true).apply();
+            applyV4Migration(prefs, System.currentTimeMillis());
             return false;
         }
         applyToFlags();
-        prefs.edit().putBoolean(PREF_INITIALIZED, true).apply();
+        prefs.edit().putBoolean(PREF_INITIALIZED, true).commit();
         return true;
+    }
+
+    /** Applies V4 fixes (Neo-OLED UI, expandCaptions=false, hideInstants=true, removeMetaAI=true) once. */
+    static void applyV4Migration(SharedPreferences prefs, long now) {
+        SharedPreferences.Editor ed = prefs.edit();
+        putStampedBool(ed, "customThemeEnabled", true, now);
+        putStampedBool(ed, "eclipseModernUi", true, now);
+        putStampedBool(ed, "offerPlaybackSpeed", false, now);
+        putStampedBool(ed, "expandCaptions", false, now);
+        putStampedBool(ed, "hideInstants", true, now);
+        putStampedBool(ed, "hideNotesTray", true, now);
+        putStampedBool(ed, "removeMetaAI", true, now);
+        putStampedInt(ed, "themePresetId", 0, now);
+        putStampedInt(ed, "themeLightPresetId", -1, now);
+        putStampedInt(ed, "feedCornerRadius", ECLIPSE_FEED_CORNER_RADIUS, now);
+        putStampedInt(ed, "storyTrayScale", ECLIPSE_STORY_TRAY_SCALE, now);
+        putStampedString(ed, "storyRingColor", ECLIPSE_STORY_RING_COLOR, now);
+        putStampedString(ed, "themePaletteJson", ECLIPSE_PALETTE_JSON, now);
+        ed.putBoolean(PREF_INITIALIZED, true);
+        ed.commit();
+    }
+
+    private static void putStampedBool(SharedPreferences.Editor ed, String k, boolean v, long now) {
+        ed.putBoolean(k, v);
+        if (now > 0) ed.putLong("__igts_" + k, now);
+    }
+
+    private static void putStampedInt(SharedPreferences.Editor ed, String k, int v, long now) {
+        ed.putInt(k, v);
+        if (now > 0) ed.putLong("__igts_" + k, now);
+    }
+
+    private static void putStampedString(SharedPreferences.Editor ed, String k, String v, long now) {
+        ed.putString(k, v);
+        if (now > 0) ed.putLong("__igts_" + k, now);
     }
 
     /** Writes all preset flags directly into a {@link SharedPreferences} (e.g. companion cache). */

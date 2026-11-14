@@ -469,8 +469,8 @@ public class RemoveMetaAIHook {
     private static final java.util.Set<View> watchedSheetDecors =
             java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
 
-    /** Arm a one-time global-layout listener that collapses the Content Deep Dive section whenever
-     *  a reel/post action sheet is shown. Called from UIHookManager.setupHooks on every resume. */
+    /** Arm a one-time global-layout listener that collapses Meta AI entries in action sheets,
+     *  composer popups, and search headers. Called from UIHookManager.setupHooks on every resume. */
     public static void watchActionSheet(Activity a) {
         if (a == null || !FeatureFlags.removeMetaAI) return;
         try {
@@ -489,31 +489,81 @@ public class RemoveMetaAIHook {
             String pkg = root.getContext().getPackageName();
             int composerId = res.getIdentifier("row_thread_composer_container", "id", pkg);
             int sheetId = res.getIdentifier("action_sheet_container", "id", pkg);
-            if (composerId == 0) return;
-            java.util.List<View> composers = new java.util.ArrayList<>();
-            findViewsById(root, composerId, composers);
-            for (View composer : composers) {
-                // Only inside an action sheet — never the DM thread composer.
-                if (sheetId != 0 && findAncestorById(composer, sheetId) == null) continue;
-                View recycler = findAncestorOfClass(composer, "RecyclerView");
-                if (!(recycler instanceof ViewGroup rv)) { collapse(composer); continue; }
-                // Find the recycler item (direct child of the RecyclerView) that holds the composer.
-                View item = composer;
-                while (item.getParent() != rv && item.getParent() instanceof View p) item = p;
-                if (item.getParent() != rv) { collapse(composer); continue; }
-                int idx = rv.indexOfChild(item);
-                collapse(item); // the "Ask Meta AI…" composer row
-                // Collapse the section's header + summary directly above it: contiguous
-                // non-clickable, text-bearing items. Stop at the first interactive (action) row.
-                for (int i = idx - 1; i >= 0 && i >= idx - 3; i--) {
-                    View sib = rv.getChildAt(i);
-                    if (sib == null || sib.getVisibility() == View.GONE) continue;
-                    if (isInteractive(sib) || !containsVisibleText(sib)) break;
-                    collapse(sib);
+            int msgListId = res.getIdentifier("message_list", "id", pkg);
+            if (composerId != 0) {
+                java.util.List<View> composers = new java.util.ArrayList<>();
+                findViewsById(root, composerId, composers);
+                for (View composer : composers) {
+                    // Only inside an action sheet — never the DM thread composer.
+                    if (sheetId != 0 && findAncestorById(composer, sheetId) == null) continue;
+                    View recycler = findAncestorOfClass(composer, "RecyclerView");
+                    if (!(recycler instanceof ViewGroup rv)) { collapse(composer); continue; }
+                    View item = composer;
+                    while (item.getParent() != rv && item.getParent() instanceof View p) item = p;
+                    if (item.getParent() != rv) { collapse(composer); continue; }
+                    int idx = rv.indexOfChild(item);
+                    collapse(item); // the "Ask Meta AI…" composer row
+                    for (int i = idx - 1; i >= 0 && i >= idx - 3; i--) {
+                        View sib = rv.getChildAt(i);
+                        if (sib == null || sib.getVisibility() == View.GONE) continue;
+                        if (isInteractive(sib) || !containsVisibleText(sib)) break;
+                        collapse(sib);
+                    }
+                    FeatureStatusTracker.setHooked("RemoveMetaAI");
                 }
-                FeatureStatusTracker.setHooked("RemoveMetaAI");
+            }
+            // Also collapse visible "Meta AI" rows inside action sheets / composer popups / search UI,
+            // never inside the DM chat message list itself.
+            if (root instanceof ViewGroup rg) {
+                sweepMetaAiUiNodes(rg, res, msgListId);
             }
         } catch (Throwable ignored) {}
+    }
+
+    private static void sweepMetaAiUiNodes(ViewGroup root, Resources res, int msgListId) {
+        java.util.ArrayDeque<View> stack = new java.util.ArrayDeque<>();
+        stack.push(root);
+        while (!stack.isEmpty()) {
+            View v = stack.pop();
+            if (v.getVisibility() == View.GONE) continue;
+            if (msgListId != 0 && v.getId() == msgListId) continue; // never touch DM chat messages
+            if (v.getId() != View.NO_ID) {
+                try {
+                    String name = res.getResourceEntryName(v.getId());
+                    if (name != null && (name.contains("meta_ai") || name.contains("gen_ai") || name.contains("genai"))) {
+                        collapse(v);
+                        FeatureStatusTracker.setHooked("RemoveMetaAI");
+                        continue;
+                    }
+                } catch (Throwable ignored) {}
+            }
+            if (v instanceof android.widget.TextView tv && tv.getText() != null) {
+                String t = tv.getText().toString().trim().toLowerCase(java.util.Locale.ROOT);
+                if (t.equals("meta ai") || t.startsWith("ask meta ai") || t.startsWith("meta ai ile") || t.startsWith("meta ai'ya")) {
+                    View target = findClickableRowAncestor(tv, root);
+                    collapse(target != null ? target : tv);
+                    FeatureStatusTracker.setHooked("RemoveMetaAI");
+                    continue;
+                }
+            }
+            if (v instanceof ViewGroup vg) {
+                for (int i = 0; i < vg.getChildCount(); i++) stack.push(vg.getChildAt(i));
+            }
+        }
+    }
+
+    private static View findClickableRowAncestor(View v, View root) {
+        View cur = v;
+        for (int depth = 0; cur != null && cur != root && depth < 5; depth++) {
+            android.view.ViewParent p = cur.getParent();
+            if (p instanceof View pv && (pv.getClass().getName().contains("RecyclerView")
+                    || pv instanceof android.widget.ListView)) {
+                return cur;
+            }
+            if (cur.isClickable() && !(cur instanceof android.widget.TextView)) return cur;
+            cur = p instanceof View ? (View) p : null;
+        }
+        return null;
     }
 
     private static void findViewsById(View v, int id, java.util.List<View> out) {
