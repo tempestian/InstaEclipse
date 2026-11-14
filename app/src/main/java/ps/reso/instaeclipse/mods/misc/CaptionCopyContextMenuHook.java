@@ -128,6 +128,16 @@ public class CaptionCopyContextMenuHook {
         }
     }
 
+    /** Installs only the reel label resolver/builder hooks needed by EXTRA_REEL_LABELS (e.g. speed/info rows). */
+    public static void installReelLabelsOnly(DexKitBridge bridge, ClassLoader classLoader) {
+        loadMediaOptionEnum(classLoader);
+        try {
+            installReelLabelOverrideHook(bridge, classLoader);
+        } catch (Throwable t) {
+            ModuleLog.line("(IE|Caption) ❌ installReelLabelsOnly: " + t);
+        }
+    }
+
     private static void installActivityTracker() {
         XposedHelpers.findAndHookMethod(Activity.class, "onResume", new XC_MethodHook() {
             @Override protected void afterHookedMethod(MethodHookParam p) { ps.reso.instaeclipse.utils.core.JitGuard.tick(p.method);
@@ -340,6 +350,9 @@ public class CaptionCopyContextMenuHook {
                             .declaredClass(creatorClassName)
                             .returnType("void")));
 
+            int bestScore = -1;
+            Method bestMethod = null;
+            int bE = 0, bO = -1, bS = 2, bT = 3, bL = -1;
             for (MethodData md : pass2) {
                 try {
                     Method m = md.getMethodInstance(classLoader);
@@ -357,29 +370,38 @@ public class CaptionCopyContextMenuHook {
                         } else if (p[i] == menuCreatorClass) {
                             sIdx = i;
                         } else if (CharSequence.class.isAssignableFrom(p[i])) {
-                            tIdx = i;
-                        } else if (p[i].isEnum() && eIdx < 0 && oIdx < 0) {
+                            if (tIdx < 0) tIdx = i;
+                        } else if (p[i].isEnum() && eIdx < 0) {
                             eIdx = i;
                         }
                     }
 
-                    if (oIdx < 0 || lIdx < 0) continue;
-
-                    addButtonMethod = m;
-                    addButtonMethod.setAccessible(true);
-                    idxEnum   = eIdx >= 0 ? eIdx : 0;
-                    idxOption = oIdx;
-                    idxSelf   = sIdx >= 0 ? sIdx : 2;
-                    idxText   = tIdx >= 0 ? tIdx : 3;
-                    idxList   = lIdx;
-                    break;
+                    if (oIdx < 0 || lIdx < 0 || tIdx < 0) continue;
+                    int score = (sIdx >= 0 ? 2 : 0) + (eIdx >= 0 ? 2 : 0);
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMethod = m;
+                        bE = eIdx >= 0 ? eIdx : 0;
+                        bO = oIdx;
+                        bS = sIdx >= 0 ? sIdx : 2;
+                        bT = tIdx;
+                        bL = lIdx;
+                        if (score >= 4) break;
+                    }
                 } catch (Throwable ignored) {}
             }
 
-            if (addButtonMethod == null) {
+            if (bestMethod == null) {
                 ModuleLog.line("(IE|Caption) ❌ addButtonMethod not found in " + creatorClassName);
                 return;
             }
+            addButtonMethod = bestMethod;
+            addButtonMethod.setAccessible(true);
+            idxEnum   = bE;
+            idxOption = bO;
+            idxSelf   = bS;
+            idxText   = bT;
+            idxList   = bL;
             DexKitCache.saveMethod("CaptionCopy_addButton", addButtonMethod);
             DexKitCache.saveString("CaptionCopy_addButtonIdx",
                     idxEnum + "," + idxOption + "," + idxSelf + "," + idxText + "," + idxList);
@@ -783,7 +805,7 @@ public class CaptionCopyContextMenuHook {
             XposedBridge.hookMethod(resolver, new XC_MethodHook() {
                 @Override
                 protected void beforeHookedMethod(MethodHookParam param) { ps.reso.instaeclipse.utils.core.JitGuard.tick(param.method);
-                    if (EXTRA_REEL_LABELS.isEmpty() || copyLinkOptionForLabels == null) return;
+                    if (EXTRA_REEL_LABELS.isEmpty() || copyLinkOptionForLabels == null || mediaOptionEnumClass == null || param.args == null) return;
                     for (int i = 0; i < param.args.length; i++) {
                         Object a = param.args[i];
                         if (a != null && mediaOptionEnumClass.isInstance(a) && EXTRA_REEL_LABELS.containsKey(a.toString()))

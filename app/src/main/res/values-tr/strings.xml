@@ -830,4 +830,5 @@
     <string name="ig_confirm_refresh">Akışı yenilemeden önce sor</string>
     <string name="ig_confirm_refresh_question">Akış yenilensin mi?</string>
     <string name="ig_confirm_refresh_action">Yenile</string>
+    <string name="ig_eclipse_modern_ui">Eclipse Neo-OLED Modern Arayüz (Yüzen Alt Bar &amp; Çerçeveli Kartlar)</string>
 </resources>

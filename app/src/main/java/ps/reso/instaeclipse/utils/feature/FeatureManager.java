@@ -359,6 +359,7 @@ public class FeatureManager {
         reg(FeatureFlags.activeHooksOnly,      "ActiveHooksOnly",        R.string.ig_dialog_perf_active_hooks_only);
         reg(FeatureFlags.litePerformanceMode,  "LitePerformanceMode",    R.string.ig_dialog_perf_lite_mode);
         reg(FeatureFlags.batteryPrefetchLimiter, "BatteryPrefetchLimiter", R.string.ig_dialog_perf_battery_prefetch);
+        reg(FeatureFlags.eclipseModernUi,      "EclipseModernUi",        R.string.ig_eclipse_modern_ui);
 
         if (!FeatureFlags.startupTab.isEmpty()) {
             FeatureStatusTracker.setEnabled("StartupTab", R.string.ig_dialog_extras_startup_tab);

@@ -216,4 +216,5 @@ public class FeatureFlags {
     public static volatile boolean activeHooksOnly = true;      // install only hooks needed by enabled features
     public static volatile boolean litePerformanceMode = true;  // drop QPL/Loom/telemetry/QP background traffic
     public static volatile boolean batteryPrefetchLimiter = true; // drop background prefetch requests to save battery/RAM
+    public static volatile boolean eclipseModernUi = false;     // floating dock + cyber card frame styling inside IG
 }

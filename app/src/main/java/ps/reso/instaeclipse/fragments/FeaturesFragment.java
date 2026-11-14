@@ -1787,9 +1787,13 @@ public class FeaturesFragment extends Fragment {
             putBoolPref(k, false);
         }
         putIntPref("autoClearCacheSizeMb", 100);
-        putIntPref("feedCornerRadius", 16);
-        putIntPref("storyTrayScale", 92);
+        putIntPref("feedCornerRadius", ps.reso.instaeclipse.utils.feature.LitePreset.ECLIPSE_FEED_CORNER_RADIUS);
+        putIntPref("storyTrayScale", ps.reso.instaeclipse.utils.feature.LitePreset.ECLIPSE_STORY_TRAY_SCALE);
         putIntPref("forceReelQuality", Integer.MAX_VALUE);
+        putIntPref("themePresetId", 0);
+        putIntPref("themeLightPresetId", -1);
+        putStringPref("storyRingColor", ps.reso.instaeclipse.utils.feature.LitePreset.ECLIPSE_STORY_RING_COLOR);
+        putStringPref("themePaletteJson", ps.reso.instaeclipse.utils.feature.LitePreset.ECLIPSE_PALETTE_JSON);
         localCache.edit().putBoolean(ps.reso.instaeclipse.utils.feature.LitePreset.PREF_INITIALIZED, true).apply();
 
         // Also push bundled Developer Options (MobileConfig + HDR) overrides to Instagram
@@ -1954,8 +1958,9 @@ public class FeaturesFragment extends Fragment {
 
         defs.add(getString(R.string.theme_section_colors));
         defs.add(Arrays.asList(
-                createSwitch(R.drawable.ic_palette, "#FF375F", getString(R.string.theme_enable), "customThemeEnabled"),
-                createClickable(R.drawable.ic_palette, "#FF375F", getString(R.string.theme_customize), () ->
+                createSwitch(R.drawable.ic_palette, "#00E5FF", getString(R.string.theme_enable), "customThemeEnabled"),
+                createSwitch(R.drawable.ic_palette, "#00E5FF", getString(R.string.ig_eclipse_modern_ui), "eclipseModernUi"),
+                createClickable(R.drawable.ic_palette, "#00E5FF", getString(R.string.theme_customize), () ->
                         themeCustomizerLauncher.launch(new Intent(requireContext(), ThemeCustomizerActivity.class))),
                 // Follows the phone's mode, like the customizer and the in-IG dialog.
                 isNightMode()

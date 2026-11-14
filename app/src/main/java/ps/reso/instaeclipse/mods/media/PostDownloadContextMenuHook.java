@@ -148,46 +148,81 @@ public class PostDownloadContextMenuHook {
     // Pass 2: findMethod(declaredClass, returnType=void) → filter for the static method
     //         that takes MediaOption$Option + ArrayList as params.
 
+    /** Result of matching MediaOptionsOverflowMenuCreator's static add-button signature. */
+    static final class AddButtonMatch {
+        final int idxEnum, idxOption, idxSelf, idxText, idxList;
+        final int score;
+
+        AddButtonMatch(int idxEnum, int idxOption, int idxSelf, int idxText, int idxList, int score) {
+            this.idxEnum = idxEnum;
+            this.idxOption = idxOption;
+            this.idxSelf = idxSelf;
+            this.idxText = idxText;
+            this.idxList = idxList;
+            this.score = score;
+        }
+    }
+
+    /** Pure matcher exposed for unit testing across IG versions where enum param order may vary. */
+    static AddButtonMatch resolveAddButtonParams(Class<?>[] p, Class<?> mediaOptionEnumClass, Class<?> menuCreatorClass) {
+        if (p == null || p.length < 4 || mediaOptionEnumClass == null) return null;
+        int eIdx = -1, oIdx = -1, sIdx = -1, tIdx = -1, lIdx = -1;
+        for (int i = 0; i < p.length; i++) {
+            Class<?> pt = p[i];
+            if (pt == mediaOptionEnumClass) {
+                oIdx = i;
+            } else if (ArrayList.class.isAssignableFrom(pt)) {
+                lIdx = i;
+            } else if (menuCreatorClass != null && pt == menuCreatorClass) {
+                sIdx = i;
+            } else if (CharSequence.class.isAssignableFrom(pt)) {
+                if (tIdx < 0) tIdx = i;
+            } else if (pt.isEnum() && eIdx < 0) {
+                eIdx = i;
+            }
+        }
+        if (oIdx < 0 || lIdx < 0 || tIdx < 0) return null;
+        int score = (sIdx >= 0 ? 2 : 0) + (eIdx >= 0 ? 2 : 0);
+        return new AddButtonMatch(eIdx >= 0 ? eIdx : 0, oIdx, sIdx >= 0 ? sIdx : 2, tIdx, lIdx, score);
+    }
+
+    private static boolean validateCachedAddButton(Method cached, int e, int o, int s, int t, int l) {
+        Class<?>[] p = cached.getParameterTypes();
+        int max = Math.max(Math.max(e, o), Math.max(s, Math.max(t, l)));
+        if (max >= p.length || e < 0 || o < 0 || s < 0 || t < 0 || l < 0) return false;
+        if (mediaOptionEnumClass != null && p[o] != mediaOptionEnumClass) return false;
+        if (!ArrayList.class.isAssignableFrom(p[l])) return false;
+        if (!CharSequence.class.isAssignableFrom(p[t])) return false;
+        return p[e].isEnum();
+    }
+
     private static void findCreatorClassAndAddButtonMethod(DexKitBridge bridge,
                                                             ClassLoader classLoader) {
         // Cache hit: restore addButtonMethod and parameter indices without DexKit
         if (DexKitCache.isCacheValid()) {
             Method cached = DexKitCache.loadMethod("PostDownload_addButton", classLoader);
             if (cached != null) {
-                addButtonMethod = cached;
-                addButtonMethod.setAccessible(true);
-                menuCreatorClass = cached.getDeclaringClass();
                 String idxStr = DexKitCache.loadString("PostDownload_addButtonIdx");
                 if (idxStr != null) {
                     String[] parts = idxStr.split(",");
                     if (parts.length == 5) {
                         try {
-                            idxEnum   = Integer.parseInt(parts[0]);
-                            idxOption = Integer.parseInt(parts[1]);
-                            idxSelf   = Integer.parseInt(parts[2]);
-                            idxText   = Integer.parseInt(parts[3]);
-                            idxList   = Integer.parseInt(parts[4]);
+                            int e = Integer.parseInt(parts[0]);
+                            int o = Integer.parseInt(parts[1]);
+                            int s = Integer.parseInt(parts[2]);
+                            int t = Integer.parseInt(parts[3]);
+                            int l = Integer.parseInt(parts[4]);
+                            if (validateCachedAddButton(cached, e, o, s, t, l)) {
+                                addButtonMethod = cached;
+                                addButtonMethod.setAccessible(true);
+                                menuCreatorClass = cached.getDeclaringClass();
+                                idxEnum = e; idxOption = o; idxSelf = s; idxText = t; idxList = l;
+                                resolveEnumNormalValueFrom(cached.getParameterTypes()[idxEnum]);
+                                if (enumNormalValue != null) return;
+                            }
                         } catch (NumberFormatException ignored) {}
                     }
                 }
-                // Resolve enumNormalValue from the button-type enum parameter
-                if (idxEnum >= 0) {
-                    try {
-                        Class<?> btnTypeEnum = cached.getParameterTypes()[idxEnum];
-                        Object[] vals = (Object[]) btnTypeEnum.getMethod("values").invoke(null);
-                        Object first = null;
-                        for (Object v : vals) {
-                            if (first == null) first = v;
-                            if (enumNormalValue == null && v.toString().equalsIgnoreCase("normal"))
-                                enumNormalValue = v;
-                        }
-                        if (enumNormalValue == null)
-                            for (Object v : vals)
-                                if (v.toString().equalsIgnoreCase("action")) { enumNormalValue = v; break; }
-                        if (enumNormalValue == null) enumNormalValue = first;
-                    } catch (Throwable ignored) {}
-                }
-                return;
             }
         }
 
@@ -209,52 +244,49 @@ public class PostDownloadContextMenuHook {
                             .declaredClass(creatorClassName)
                             .returnType("void")));
 
+            int bestScore = -1;
+            AddButtonMatch bestMatch = null;
+            Method bestMethod = null;
             for (MethodData md : pass2) {
                 try {
                     Method m = md.getMethodInstance(classLoader);
                     if (!Modifier.isStatic(m.getModifiers())) continue;
-
-                    Class<?>[] p = m.getParameterTypes();
-                    if (p.length < 4) continue;
-
-                    int eIdx = -1, oIdx = -1, sIdx = -1, tIdx = -1, lIdx = -1;
-                    for (int i = 0; i < p.length; i++) {
-                        if (mediaOptionEnumClass != null && p[i] == mediaOptionEnumClass) {
-                            oIdx = i;
-                        } else if (ArrayList.class.isAssignableFrom(p[i])) {
-                            lIdx = i;
-                        } else if (p[i] == menuCreatorClass) {
-                            sIdx = i;
-                        } else if (CharSequence.class.isAssignableFrom(p[i])) {
-                            tIdx = i;
-                        } else if (p[i].isEnum() && eIdx < 0 && oIdx < 0) {
-                            eIdx = i;
-                        }
+                    AddButtonMatch match = resolveAddButtonParams(m.getParameterTypes(), mediaOptionEnumClass, menuCreatorClass);
+                    if (match != null && match.score > bestScore) {
+                        bestScore = match.score;
+                        bestMatch = match;
+                        bestMethod = m;
+                        if (bestScore >= 4) break;
                     }
-
-                    if (oIdx < 0 || lIdx < 0) continue;
-
-                    addButtonMethod = m;
-                    addButtonMethod.setAccessible(true);
-                    idxEnum   = eIdx >= 0 ? eIdx : 0;
-                    idxOption = oIdx;
-                    idxSelf   = sIdx >= 0 ? sIdx : 2;
-                    idxText   = tIdx >= 0 ? tIdx : 3;
-                    idxList   = lIdx;
-                    break;
                 } catch (Throwable ignored) {}
             }
 
-            if (addButtonMethod == null) {
+            if (bestMethod == null || bestMatch == null) {
                 ModuleLog.line("(IE|Post) ❌ addButtonMethod not found in " + creatorClassName);
                 return;
             }
+            addButtonMethod = bestMethod;
+            addButtonMethod.setAccessible(true);
+            idxEnum   = bestMatch.idxEnum;
+            idxOption = bestMatch.idxOption;
+            idxSelf   = bestMatch.idxSelf;
+            idxText   = bestMatch.idxText;
+            idxList   = bestMatch.idxList;
+
             DexKitCache.saveMethod("PostDownload_addButton", addButtonMethod);
             DexKitCache.saveString("PostDownload_addButtonIdx",
                     idxEnum + "," + idxOption + "," + idxSelf + "," + idxText + "," + idxList);
 
-            // Resolve the "normal" button-type enum value
-            Class<?> btnTypeEnumClass = addButtonMethod.getParameterTypes()[idxEnum];
+            resolveEnumNormalValueFrom(addButtonMethod.getParameterTypes()[idxEnum]);
+
+        } catch (Throwable t) {
+            ModuleLog.line("(IE|Post) ❌ findCreatorClassAndAddButtonMethod: " + t);
+        }
+    }
+
+    private static void resolveEnumNormalValueFrom(Class<?> btnTypeEnumClass) {
+        try {
+            if (btnTypeEnumClass == null || !btnTypeEnumClass.isEnum()) return;
             Object[] btnVals = (Object[]) btnTypeEnumClass.getMethod("values").invoke(null);
             Object firstVal = null;
             for (Object v : btnVals) {
@@ -269,10 +301,7 @@ public class PostDownloadContextMenuHook {
                 }
             }
             if (enumNormalValue == null) enumNormalValue = firstVal;
-
-        } catch (Throwable t) {
-            ModuleLog.line("(IE|Post) ❌ findCreatorClassAndAddButtonMethod: " + t);
-        }
+        } catch (Throwable ignored) {}
     }
 
     // ── Hook A: intercept every addButton call, inject Download once per menu ─
@@ -284,11 +313,13 @@ public class PostDownloadContextMenuHook {
             return;
         }
 
+        final int expectedArgs = addButtonMethod.getParameterCount();
         XposedBridge.hookMethod(addButtonMethod, new XC_MethodHook() {
 
             @Override
             protected void beforeHookedMethod(MethodHookParam param) { ps.reso.instaeclipse.utils.core.JitGuard.tick(param.method);
                 if (Boolean.TRUE.equals(sAddingDownload.get())) return;
+                if (param.args == null || idxOption < 0 || idxOption >= param.args.length) return;
                 Object opt = param.args[idxOption];
                 // Suppress IG's own native rows — we inject our own versions instead
                 if (FeatureFlags.enablePostDownload && opt == downloadOptionValue) {
@@ -309,6 +340,7 @@ public class PostDownloadContextMenuHook {
             @Override
             protected void afterHookedMethod(MethodHookParam param) { ps.reso.instaeclipse.utils.core.JitGuard.tick(param.method);
                 if (Boolean.TRUE.equals(sAddingDownload.get())) return;
+                if (param.args == null || param.args.length < expectedArgs) return;
 
                 boolean wantDownload = FeatureFlags.enablePostDownload && downloadOptionValue != null;
                 boolean wantCopyLink = FeatureFlags.copyMediaLink && copyLinkOptionValue != null;
@@ -324,7 +356,8 @@ public class PostDownloadContextMenuHook {
                         || (opt != null && (opt == copyImageOptionValue || opt == mediaInfoOptionValue
                                 || opt == speedOptionValue || opt == countsOptionValue))) return;
 
-                Object self = param.args[idxSelf];
+                Object self = idxSelf >= 0 && idxSelf < param.args.length ? param.args[idxSelf] : null;
+                if (self == null) return;
                 boolean alreadyProcessed;
                 synchronized (processedCreators) {
                     alreadyProcessed = processedCreators.contains(self);
@@ -352,11 +385,15 @@ public class PostDownloadContextMenuHook {
 
     /** Adds one button (Download / Copy Media Link) to the menu currently being built. */
     private static void injectRow(XC_MethodHook.MethodHookParam param, Object optionValue, int labelResId) {
-        Object[] callArgs = new Object[addButtonMethod.getParameterCount()];
-        System.arraycopy(param.args, 0, callArgs, 0, callArgs.length);
+        if (optionValue == null || addButtonMethod == null || param.args == null) return;
+        int n = addButtonMethod.getParameterCount();
+        if (param.args.length < n) return;
+        Object[] callArgs = new Object[n];
+        System.arraycopy(param.args, 0, callArgs, 0, n);
         callArgs[idxEnum]   = enumNormalValue;
         callArgs[idxOption] = optionValue;
-        callArgs[idxText]   = I18n.t(AndroidAppHelper.currentApplication(), labelResId);
+        String label = I18n.t(AndroidAppHelper.currentApplication(), labelResId);
+        callArgs[idxText]   = (label == null || label.isEmpty()) ? optionValue.toString() : label;
 
         sAddingDownload.set(true);
         try {

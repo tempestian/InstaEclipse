@@ -63,29 +63,51 @@ public final class RoundedFeedPostsHook {
         return best;
     }
 
+    private static final int STROKE_TAG = 0x7e1e0277;
+
     private static void apply(View frame) {
         try {
             View v = target(frame);
             int dp = FeatureFlags.feedCornerRadius;
+            if (dp <= 0 && FeatureFlags.eclipseModernUi) dp = 24;
             Object applied = v.getTag(RADIUS_TAG);
             if (dp <= 0) {
                 if (applied == null) return;
                 v.setTag(RADIUS_TAG, null);
                 v.setClipToOutline(false);
                 v.setOutlineProvider(ViewOutlineProvider.BACKGROUND);
+                if (Boolean.TRUE.equals(v.getTag(STROKE_TAG))) {
+                    v.setForeground(null);
+                    v.setTag(STROKE_TAG, null);
+                }
                 return;
             }
-            float radius = dp * v.getResources().getDisplayMetrics().density;
-            if (applied instanceof Float f && f == radius && v.getClipToOutline()) return;
-            v.setTag(RADIUS_TAG, radius);
-            v.setOutlineProvider(new ViewOutlineProvider() {
-                @Override
-                public void getOutline(View view, Outline outline) {
-                    outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), radius);
+            float density = v.getResources().getDisplayMetrics().density;
+            float radius = dp * density;
+            if (!(applied instanceof Float f && f == radius && v.getClipToOutline())) {
+                v.setTag(RADIUS_TAG, radius);
+                v.setOutlineProvider(new ViewOutlineProvider() {
+                    @Override
+                    public void getOutline(View view, Outline outline) {
+                        outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), radius);
+                    }
+                });
+                v.setClipToOutline(true);
+                v.invalidateOutline();
+            }
+            if (FeatureFlags.eclipseModernUi) {
+                if (!Boolean.TRUE.equals(v.getTag(STROKE_TAG))) {
+                    android.graphics.drawable.GradientDrawable border = new android.graphics.drawable.GradientDrawable();
+                    border.setCornerRadius(radius);
+                    border.setColor(0x00000000);
+                    border.setStroke(Math.max(1, Math.round(1.0f * density)), 0xFF23304C);
+                    v.setForeground(border);
+                    v.setTag(STROKE_TAG, Boolean.TRUE);
                 }
-            });
-            v.setClipToOutline(true);
-            v.invalidateOutline();
+            } else if (Boolean.TRUE.equals(v.getTag(STROKE_TAG))) {
+                v.setForeground(null);
+                v.setTag(STROKE_TAG, null);
+            }
         } catch (Throwable ignored) {}
     }
 }

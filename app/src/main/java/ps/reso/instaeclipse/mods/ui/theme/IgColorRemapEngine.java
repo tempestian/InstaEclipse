@@ -162,11 +162,17 @@ public final class IgColorRemapEngine {
         }
         SparseIntArray fuzzy = fuzzyCache;
         if (fuzzy != null) {
-            int cached = fuzzy.get(color, CACHE_MISS);
-            if (cached != CACHE_MISS) return cached;
+            synchronized (fuzzy) {
+                int cached = fuzzy.get(color, CACHE_MISS);
+                if (cached != CACHE_MISS) return cached;
+            }
         }
         int result = remapFuzzy(color);
-        if (fuzzy != null && fuzzy.size() < FUZZY_CACHE_LIMIT) fuzzy.put(color, result);
+        if (fuzzy != null) {
+            synchronized (fuzzy) {
+                if (fuzzy.size() < FUZZY_CACHE_LIMIT) fuzzy.put(color, result);
+            }
+        }
         return result;
     }
 

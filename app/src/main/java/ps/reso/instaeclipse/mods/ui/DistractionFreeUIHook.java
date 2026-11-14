@@ -78,7 +78,7 @@ public class DistractionFreeUIHook {
 
     private static boolean anyFlag() {
         return FeatureFlags.disableStories || FeatureFlags.hideStoriesTray || FeatureFlags.disableReels || anyNavTabHidden() || FeatureFlags.hidePlusUpsells
-                || !FeatureFlags.navTabOrder.isEmpty() || FeatureFlags.disableDiscoverPeople || FeatureFlags.hideInstants;
+                || !FeatureFlags.navTabOrder.isEmpty() || FeatureFlags.disableDiscoverPeople || FeatureFlags.hideInstants || FeatureFlags.eclipseModernUi;
     }
 
     @SuppressLint("DiscouragedApi")
@@ -142,7 +142,38 @@ public class DistractionFreeUIHook {
                 ps.reso.instaeclipse.utils.feature.FeatureStatusTracker.setHooked("HideInstants");
             }
             if (!FeatureFlags.navTabOrder.isEmpty()) reorderTabs(a, (ViewGroup) root);
+            if (FeatureFlags.eclipseModernUi) styleBottomNavDock(a, (ViewGroup) root);
         } catch (Throwable ignored) {}
+    }
+
+    private static final int NAV_DOCK_TAG = 0x7e1e0299;
+
+    /** Styles the bottom navigation bar as a floating obsidian-glass dock pill when Eclipse Modern UI is enabled. */
+    @SuppressLint("DiscouragedApi")
+    private static void styleBottomNavDock(Activity a, ViewGroup root) {
+        int feedId = a.getResources().getIdentifier("feed_tab", "id", a.getPackageName());
+        View feed = feedId != 0 ? root.findViewById(feedId) : null;
+        if (feed == null || !(feed.getParent() instanceof ViewGroup bar)) return;
+        if (bar.getTag(NAV_DOCK_TAG) != null) return;
+        bar.setTag(NAV_DOCK_TAG, Boolean.TRUE);
+        float d = a.getResources().getDisplayMetrics().density;
+        android.graphics.drawable.GradientDrawable dock = new android.graphics.drawable.GradientDrawable();
+        dock.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        dock.setColor(0xF0090E1A);
+        dock.setCornerRadius(22f * d);
+        dock.setStroke(Math.max(1, (int) (1f * d)), 0xFF233252);
+        bar.setBackground(dock);
+        bar.setClipToOutline(true);
+        bar.setElevation(8f * d);
+        if (bar.getLayoutParams() instanceof ViewGroup.MarginLayoutParams lp
+                && lp.leftMargin == 0 && lp.rightMargin == 0) {
+            int hMargin = (int) (10f * d);
+            int bMargin = (int) (4f * d);
+            lp.leftMargin = hMargin;
+            lp.rightMargin = hMargin;
+            lp.bottomMargin = Math.max(lp.bottomMargin, bMargin);
+            bar.setLayoutParams(lp);
+        }
     }
 
     /** Every bottom-nav tab that can be reordered, in Instagram's default order. */

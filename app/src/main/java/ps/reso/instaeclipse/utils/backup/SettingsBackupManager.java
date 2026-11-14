@@ -163,6 +163,7 @@ public class SettingsBackupManager {
         s.put("activeHooksOnly", FeatureFlags.activeHooksOnly);
         s.put("litePerformanceMode", FeatureFlags.litePerformanceMode);
         s.put("batteryPrefetchLimiter", FeatureFlags.batteryPrefetchLimiter);
+        s.put("eclipseModernUi", FeatureFlags.eclipseModernUi);
         root.put("settings", s);
         return root.toString(2);
     }
@@ -320,6 +321,7 @@ public class SettingsBackupManager {
         if (s.has("activeHooksOnly"))        FeatureFlags.activeHooksOnly        = s.getBoolean("activeHooksOnly");
         if (s.has("litePerformanceMode"))    FeatureFlags.litePerformanceMode    = s.getBoolean("litePerformanceMode");
         if (s.has("batteryPrefetchLimiter")) FeatureFlags.batteryPrefetchLimiter = s.getBoolean("batteryPrefetchLimiter");
+        if (s.has("eclipseModernUi"))        FeatureFlags.eclipseModernUi        = s.getBoolean("eclipseModernUi");
     }
 
     private static double parseDouble(Object raw, double fallback) {

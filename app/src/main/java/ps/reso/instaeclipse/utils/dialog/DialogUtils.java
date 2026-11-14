@@ -50,29 +50,28 @@ public class DialogUtils {
 
     private static AlertDialog currentDialog;
 
-    // ==== 0.7 DESIGN TOKENS ====
-    // One palette drives every dialog surface so the in-IG UI reads as a single, coherent sheet.
-    // Colors are ARGB ints (used directly with setColor/setTextColor — no parseColor round-trip).
+    // ==== ECLIPSE NEO-OLED DESIGN TOKENS ====
+    // Obsidian-glass surface hierarchy with electric cyan / violet / magenta accents.
     private static final int C_SHEET    = 0xFF000000; // bottom-sheet background (AMOLED pure black)
-    private static final int C_CARD     = 0xFF101014; // grouped card fill (subtle elevated dark)
-    private static final int C_PRESSED  = 0xFF1E1E26; // row pressed / highlight
-    private static final int C_HAIRLINE = 0xFF26262F; // dividers, crisp card borders
-    private static final int C_TEXT     = 0xFFF5F5FA; // primary text
-    private static final int C_TEXT2    = 0xFFA0A0AC; // secondary/muted text
-    private static final int C_HANDLE   = 0xFF3E3E48; // drag handle
-    private static final int C_DANGER   = 0xFFFF453A; // destructive accent (close, delete)
-    // Primary/interactive accent (back, links, toggles): the custom theme's accent when one is on.
-    private static int accent() { return ps.reso.instaeclipse.mods.ui.theme.IgThemeEngine.accentOr(0xFF0A84FF); }
+    private static final int C_CARD     = 0xFF0B0F19; // grouped card fill (deep midnight obsidian)
+    private static final int C_PRESSED  = 0xFF151C2E; // row pressed / highlight
+    private static final int C_HAIRLINE = 0xFF222E4A; // dividers, cyber-indigo card borders
+    private static final int C_TEXT     = 0xFFF0F5FF; // ice-white primary text
+    private static final int C_TEXT2    = 0xFF7E8CA8; // cool slate-blue muted text
+    private static final int C_HANDLE   = 0xFF33415C; // drag handle
+    private static final int C_DANGER   = 0xFFFF2E7E; // destructive accent (cyber magenta)
+    // Primary/interactive accent (back, links, toggles): custom theme accent or electric cyan.
+    private static int accent() { return ps.reso.instaeclipse.mods.ui.theme.IgThemeEngine.accentOr(0xFF00E5FF); }
 
-    /** Section accent palette — assigned per thematic group so each menu section has its own hue. */
-    private static final String A_APPEARANCE = "#FF375F"; // vivid pink/red
-    private static final String A_PRIVACY    = "#5E5CE6"; // indigo
+    /** Section accent palette — assigned per thematic group so each menu section has its own neon hue. */
+    private static final String A_APPEARANCE = "#00E5FF"; // electric cyan
+    private static final String A_PRIVACY    = "#7C4DFF"; // cyber violet
     private static final String A_MEDIA      = "#FF9F0A"; // amber
-    private static final String A_SOCIAL     = "#BF5AF2"; // purple
-    private static final String A_TOOLS      = "#8E8E93"; // neutral gray
+    private static final String A_SOCIAL     = "#FF2E93"; // neon magenta
+    private static final String A_TOOLS      = "#7E8CA8"; // cool slate
 
-    /** Card corner radius (px) — smooth modern grouped card radius. */
-    private static final int R_CARD = 32;
+    /** Card corner radius (px) — sculpted rounded card radius. */
+    private static final int R_CARD = 36;
 
     @SuppressLint("UseCompatLoadingForDrawables")
     public static void showEclipseOptionsDialog(Context context) {
@@ -2211,7 +2210,7 @@ public class DialogUtils {
 
         // ---- Colors ----
         // Enable-custom-theme + open the full color customizer.
-        ToggleRow themeSwitch = createSwitch(context, R.drawable.ic_palette, "#FF2D55",
+        ToggleRow themeSwitch = createSwitch(context, R.drawable.ic_palette, "#00E5FF",
                 I18n.t(context, R.string.theme_enable), FeatureFlags.customThemeEnabled);
         themeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             FeatureFlags.customThemeEnabled = isChecked;
@@ -2220,10 +2219,18 @@ public class DialogUtils {
             ps.reso.instaeclipse.mods.ui.theme.IgThemeHook.refreshCurrentActivity();
         });
 
+        ToggleRow modernUiSwitch = createSwitch(context, R.drawable.ic_palette, "#00E5FF",
+                I18n.t(context, R.string.ig_eclipse_modern_ui), FeatureFlags.eclipseModernUi);
+        modernUiSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            FeatureFlags.eclipseModernUi = isChecked;
+            SettingsManager.saveAllFlags();
+        });
+
         LinearLayout colorsCard = card(context);
         colorsCard.addView(themeSwitch);
+        colorsCard.addView(modernUiSwitch);
         colorsCard.addView(createActionRow(context, R.drawable.ic_palette,
-                I18n.t(context, R.string.theme_customize), "#FF2D55", v -> {
+                I18n.t(context, R.string.theme_customize), "#00E5FF", v -> {
                     if (ModuleActivityLauncher.launch(context,
                             "ps.reso.instaeclipse.ui.theme.ThemeCustomizerActivity", null)) {
                         if (currentDialog != null) {

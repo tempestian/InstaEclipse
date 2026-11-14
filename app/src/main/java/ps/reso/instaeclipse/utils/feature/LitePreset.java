@@ -10,7 +10,33 @@ import android.content.SharedPreferences;
  */
 public final class LitePreset {
 
-    public static final String PREF_INITIALIZED = "__litePresetInitializedV2";
+    public static final String PREF_INITIALIZED = "__litePresetInitializedV3";
+    private static final String PREF_PREVIOUS_V2 = "__litePresetInitializedV2";
+
+    public static final int ECLIPSE_FEED_CORNER_RADIUS = 24;
+    public static final int ECLIPSE_STORY_TRAY_SCALE = 86;
+    public static final String ECLIPSE_STORY_RING_COLOR = "#00E5FF,#7C4DFF,#FF2E93";
+    public static final String ECLIPSE_PALETTE_JSON = buildEclipsePaletteJson();
+
+    private static String buildEclipsePaletteJson() {
+        return "{"
+                + "\"background\":" + 0xFF000000 + ","
+                + "\"surface\":" + 0xFF0B0F19 + ","
+                + "\"primaryText\":" + 0xFFF0F5FF + ","
+                + "\"secondaryText\":" + 0xFF7E8CA8 + ","
+                + "\"accent\":" + 0xFF00E5FF + ","
+                + "\"button\":" + 0xFF6C5CE7 + ","
+                + "\"icon\":" + 0xFFCFE2FF + ","
+                + "\"glyph\":" + 0xFF00E5FF + ","
+                + "\"divider\":" + 0xFF1B2336 + ","
+                + "\"border\":" + 0xFF24304A + ","
+                + "\"statusBar\":" + 0xFF000000 + ","
+                + "\"navigation\":" + 0xFF070A12 + ","
+                + "\"link\":" + 0xFF38BDF8 + ","
+                + "\"error\":" + 0xFFFF4D6D + ","
+                + "\"destructive\":" + 0xFFFF2E7E
+                + "}";
+    }
 
     public static final String[] PRESET_BOOL_KEYS = {
             // Core & Developer Options
@@ -29,9 +55,9 @@ public final class LitePreset {
             "hideShareCreateGroup", "confirmCalls", "confirmFollows", "confirmFeedRefresh",
             "disableSwipeToCamera", "openLinksExternally", "disableSearchHistory",
             "disableDiscoverPeople", "hideOnboardingPrompts",
-            // Reels & Feed UX (#9 + Clean UI)
-            "forceReelScrubber", "offerPlaybackSpeed", "holdLeftSlowMotion",
-            "exactTimestamps", "expandCaptions",
+            // Reels & Feed UX + Eclipse Neo-OLED Modern UI
+            "forceReelScrubber", "holdLeftSlowMotion",
+            "exactTimestamps", "expandCaptions", "customThemeEnabled", "eclipseModernUi",
             // Clean Feed & DM (#13, #14)
             "hideSuggestionsInFeed", "hideThreadsSuggestions", "removeMetaAI",
             "hidePlusUpsells", "hideNotesTray", "hideDmSuggestions",
@@ -41,7 +67,7 @@ public final class LitePreset {
     };
 
     public static final String[] PRESET_FALSE_KEYS = {
-            "isGhostSeen", "isGhostTyping", "isGhostStory"
+            "isGhostSeen", "isGhostTyping", "isGhostStory", "offerPlaybackSpeed"
     };
 
     private LitePreset() {}
@@ -96,14 +122,13 @@ public final class LitePreset {
         FeatureFlags.hideOnboardingPrompts = true;
         ExtrasFeatures.set("hideOnboardingPrompts", true);
 
-        // Reels & Feed UX
+        // Reels & Feed UX + Eclipse Neo-OLED Modern UI
         FeatureFlags.forceReelScrubber = true;
-        FeatureFlags.offerPlaybackSpeed = true;
+        FeatureFlags.offerPlaybackSpeed = false;
         FeatureFlags.holdLeftSlowMotion = true;
         FeatureFlags.exactTimestamps = true;
         FeatureFlags.expandCaptions = true;
-        FeatureFlags.feedCornerRadius = 16;
-        FeatureFlags.storyTrayScale = 92;
+        applyVisualDefaults();
 
         // Clean Feed & DM
         FeatureFlags.hideSuggestionsInFeed = true;
@@ -126,12 +151,39 @@ public final class LitePreset {
         }
     }
 
+    /** Applies V3 visual overhaul tokens (Neo-OLED theme, floating dock, cyber cards, neon rings). */
+    public static void applyVisualDefaults() {
+        FeatureFlags.customThemeEnabled = true;
+        FeatureFlags.eclipseModernUi = true;
+        FeatureFlags.themePresetId = 0;
+        FeatureFlags.themeLightPresetId = -1;
+        FeatureFlags.themePaletteJson = ECLIPSE_PALETTE_JSON;
+        FeatureFlags.feedCornerRadius = ECLIPSE_FEED_CORNER_RADIUS;
+        FeatureFlags.storyTrayScale = ECLIPSE_STORY_TRAY_SCALE;
+        FeatureFlags.storyRingColor = ECLIPSE_STORY_RING_COLOR;
+    }
+
     /**
-     * Seeds the preset once on a fresh install (when neither {@link #PREF_INITIALIZED} nor any
-     * core user setting is present yet). Returns true if the preset was applied.
+     * Seeds the preset once on a fresh install, or upgrades a V2 preset user once to V3 visual
+     * defaults + safer menu defaults without clobbering unrelated user toggles.
      */
     public static boolean seedIfFirstRun(SharedPreferences prefs) {
         if (prefs == null || prefs.getBoolean(PREF_INITIALIZED, false)) {
+            return false;
+        }
+        if (prefs.getBoolean(PREF_PREVIOUS_V2, false)) {
+            SharedPreferences.Editor ed = prefs.edit();
+            ed.putBoolean("customThemeEnabled", true);
+            ed.putBoolean("eclipseModernUi", true);
+            ed.putBoolean("offerPlaybackSpeed", false);
+            ed.putInt("themePresetId", 0);
+            ed.putInt("themeLightPresetId", -1);
+            ed.putString("themePaletteJson", ECLIPSE_PALETTE_JSON);
+            ed.putInt("feedCornerRadius", ECLIPSE_FEED_CORNER_RADIUS);
+            ed.putInt("storyTrayScale", ECLIPSE_STORY_TRAY_SCALE);
+            ed.putString("storyRingColor", ECLIPSE_STORY_RING_COLOR);
+            ed.putBoolean(PREF_INITIALIZED, true);
+            ed.apply();
             return false;
         }
         boolean hasExisting = prefs.contains("isAdBlockEnabled")
@@ -160,14 +212,22 @@ public final class LitePreset {
             if (timestampMs > 0) ed.putLong("__ts_" + k, timestampMs);
         }
         ed.putInt("autoClearCacheSizeMb", 100);
-        ed.putInt("feedCornerRadius", 16);
-        ed.putInt("storyTrayScale", 92);
+        ed.putInt("feedCornerRadius", ECLIPSE_FEED_CORNER_RADIUS);
+        ed.putInt("storyTrayScale", ECLIPSE_STORY_TRAY_SCALE);
         ed.putInt("forceReelQuality", Integer.MAX_VALUE);
+        ed.putInt("themePresetId", 0);
+        ed.putInt("themeLightPresetId", -1);
+        ed.putString("storyRingColor", ECLIPSE_STORY_RING_COLOR);
+        ed.putString("themePaletteJson", ECLIPSE_PALETTE_JSON);
         if (timestampMs > 0) {
             ed.putLong("__ts_autoClearCacheSizeMb", timestampMs);
             ed.putLong("__ts_feedCornerRadius", timestampMs);
             ed.putLong("__ts_storyTrayScale", timestampMs);
             ed.putLong("__ts_forceReelQuality", timestampMs);
+            ed.putLong("__ts_themePresetId", timestampMs);
+            ed.putLong("__ts_themeLightPresetId", timestampMs);
+            ed.putLong("__ts_storyRingColor", timestampMs);
+            ed.putLong("__ts_themePaletteJson", timestampMs);
         }
         ed.putBoolean(PREF_INITIALIZED, true);
         ed.apply();

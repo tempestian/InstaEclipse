@@ -13,36 +13,36 @@
 
 
     <!-- Bottom Navigation Colors -->
-    <color name="bottom_nav_icon">#8A8A93</color>
-    <color name="bottom_nav_icon_active">#9B99FF</color>
-    <color name="purple_200">#9C27B0</color>
+    <color name="bottom_nav_icon">#7E8CA8</color>
+    <color name="bottom_nav_icon_active">#00E5FF</color>
+    <color name="purple_200">#7C4DFF</color>
 
-    <!-- ==== 0.7 brand palette (fixed dark, mirrors the in-IG dialog sheet) ==== -->
-    <color name="ie_primary">#9B99FF</color>            <!-- indigo accent -->
-    <color name="ie_on_primary">#1B1930</color>
-    <color name="ie_primary_container">#302E5E</color>
-    <color name="ie_on_primary_container">#E2E0FF</color>
-    <color name="ie_secondary">#C7C5F5</color>
-    <color name="ie_on_secondary">#1E1D30</color>
-    <color name="ie_secondary_container">#2C2B45</color>
-    <color name="ie_on_secondary_container">#E4E2FF</color>
-    <color name="ie_tertiary">#FF8199</color>            <!-- pink accent -->
-    <color name="ie_on_tertiary">#3A0E1B</color>
-    <color name="ie_tertiary_container">#5C1E2C</color>
-    <color name="ie_on_tertiary_container">#FFD9E0</color>
+    <!-- ==== ECLIPSE NEO-OLED PALETTE ==== -->
+    <color name="ie_primary">#00E5FF</color>            <!-- electric cyan accent -->
+    <color name="ie_on_primary">#001E26</color>
+    <color name="ie_primary_container">#082E3D</color>
+    <color name="ie_on_primary_container">#CCF7FF</color>
+    <color name="ie_secondary">#A59BFF</color>          <!-- cyber violet -->
+    <color name="ie_on_secondary">#141136</color>
+    <color name="ie_secondary_container">#231F4D</color>
+    <color name="ie_on_secondary_container">#E8E5FF</color>
+    <color name="ie_tertiary">#FF2E93</color>           <!-- neon magenta accent -->
+    <color name="ie_on_tertiary">#3A061E</color>
+    <color name="ie_tertiary_container">#521132</color>
+    <color name="ie_on_tertiary_container">#FFD9EC</color>
 
     <color name="ie_background">#000000</color>
     <color name="ie_surface">#000000</color>
-    <color name="ie_on_surface">#F4F4F8</color>
-    <color name="ie_surface_variant">#1F1F27</color>
-    <color name="ie_on_surface_variant">#A8A8B4</color>
+    <color name="ie_on_surface">#F0F5FF</color>
+    <color name="ie_surface_variant">#161D30</color>
+    <color name="ie_on_surface_variant">#7E8CA8</color>
     <color name="ie_surface_lowest">#000000</color>
-    <color name="ie_surface_low">#0A0A0E</color>
-    <color name="ie_surface_container">#111116</color>
-    <color name="ie_surface_high">#18181F</color>
-    <color name="ie_surface_highest">#22222A</color>
-    <color name="ie_outline">#3A3A46</color>
-    <color name="ie_outline_variant">#26262F</color>
-    <color name="ie_error">#FF6B60</color>
-    <color name="ie_on_error">#3A0906</color>
+    <color name="ie_surface_low">#060911</color>
+    <color name="ie_surface_container">#0B0F19</color>
+    <color name="ie_surface_high">#121829</color>
+    <color name="ie_surface_highest">#1A233A</color>
+    <color name="ie_outline">#293859</color>
+    <color name="ie_outline_variant">#1C263E</color>
+    <color name="ie_error">#FF4D6D</color>
+    <color name="ie_on_error">#3A0611</color>
 </resources>

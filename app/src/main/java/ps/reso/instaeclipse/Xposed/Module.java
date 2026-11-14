@@ -646,9 +646,14 @@ public class Module {
                         ModuleLog.line("(InstaEclipse | CopyComment): ❌ Failed to hook");
                     }
 
-                    // Caption Copy
+                    // Caption Copy & Reel Overflow Label Overrides (for EXTRA_REEL_LABELS like Speed/MediaInfo)
                     try {
-                        if (shouldHook("CaptionCopyContextMenuHook", FeatureFlags.enableCaptionCopy)) new CaptionCopyContextMenuHook().install(dexKitBridge, lpparam.classLoader);
+                        if (shouldHook("CaptionCopyContextMenuHook", FeatureFlags.enableCaptionCopy)) {
+                            new CaptionCopyContextMenuHook().install(dexKitBridge, lpparam.classLoader);
+                        } else if (shouldHook("CaptionCopyContextMenuHook_ReelLabels",
+                                FeatureFlags.offerMediaInfo || FeatureFlags.offerPlaybackSpeed)) {
+                            CaptionCopyContextMenuHook.installReelLabelsOnly(dexKitBridge, lpparam.classLoader);
+                        }
                     } catch (Throwable ignored) {
                         ModuleLog.line("(InstaEclipse | Caption): ❌ Failed to hook");
                     }
@@ -807,9 +812,9 @@ public class Module {
                         ModuleLog.line("(InstaEclipse | RefreshConfirm): ❌ Failed to hook");
                     }
 
-                    // Rounded feed post corners (#276)
+                    // Rounded feed post corners (#276) / Eclipse Modern UI cards
                     try {
-                        if (shouldHook("RoundedFeedPostsHook", FeatureFlags.feedCornerRadius > 0)) ps.reso.instaeclipse.mods.feed.RoundedFeedPostsHook.install(hostClassLoader);
+                        if (shouldHook("RoundedFeedPostsHook", FeatureFlags.feedCornerRadius > 0 || FeatureFlags.eclipseModernUi)) ps.reso.instaeclipse.mods.feed.RoundedFeedPostsHook.install(hostClassLoader);
                     } catch (Throwable ignored) {
                         ModuleLog.line("(InstaEclipse | RoundedPosts): ❌ Failed to hook");
                     }

@@ -845,4 +845,5 @@ Stay on this screen until it finishes.</string>
     <string name="ig_confirm_refresh">Ask Before Refreshing the Feed</string>
     <string name="ig_confirm_refresh_question">Refresh the feed?</string>
     <string name="ig_confirm_refresh_action">Refresh</string>
+    <string name="ig_eclipse_modern_ui">Eclipse Neo-OLED Modern UI (Floating Dock &amp; Framed Cards)</string>
 </resources>

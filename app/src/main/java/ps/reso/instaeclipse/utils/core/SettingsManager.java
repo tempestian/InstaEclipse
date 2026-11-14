@@ -210,6 +210,7 @@ public class SettingsManager {
 
         // Custom Theme
         editor.putBoolean("customThemeEnabled", FeatureFlags.customThemeEnabled);
+        editor.putBoolean("eclipseModernUi", FeatureFlags.eclipseModernUi);
         editor.putInt("themePresetId", FeatureFlags.themePresetId);
         editor.putInt("themeLightPresetId", FeatureFlags.themeLightPresetId);
         editor.putString("themePaletteJson", FeatureFlags.themePaletteJson);
@@ -433,6 +434,7 @@ public class SettingsManager {
 
         // Custom Theme
         FeatureFlags.customThemeEnabled = prefs.getBoolean("customThemeEnabled", false);
+        FeatureFlags.eclipseModernUi = prefs.getBoolean("eclipseModernUi", false);
         FeatureFlags.themePresetId = prefs.getInt("themePresetId", 1);
         // #251: "theme in dark mode only" is the default so a custom theme never breaks light mode
         // (a dark palette's surfaces/text are illegible on IG's light chrome). The old default was 0

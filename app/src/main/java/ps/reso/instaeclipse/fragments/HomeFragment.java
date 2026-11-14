@@ -135,7 +135,7 @@ public class HomeFragment extends Fragment {
             new Shortcut("enableReelDownload", R.string.ig_dialog_downloader_reels, R.drawable.ic_download, 0xFFFF9F0A),
             new Shortcut("enableStoryDownload", R.string.ig_dialog_downloader_stories, R.drawable.ic_download, 0xFFFF9F0A),
             new Shortcut("isAdBlockEnabled", R.string.ig_dialog_ad_block_ads, R.drawable.ic_shield, 0xFFFF453A),
-            new Shortcut("customThemeEnabled", R.string.theme_enable, R.drawable.ic_palette, 0xFFFF375F),
+            new Shortcut("customThemeEnabled", R.string.theme_enable, R.drawable.ic_palette, 0xFF00E5FF),
             new Shortcut("disableReels", R.string.ig_dialog_distraction_disable_reels, R.drawable.ic_movie, 0xFF30D158),
             new Shortcut("disableStories", R.string.ig_dialog_distraction_disable_stories, R.drawable.ic_story_ring, 0xFF30D158),
             new Shortcut("disableExplore", R.string.ig_dialog_distraction_disable_explore, R.drawable.ic_search, 0xFF30D158),
