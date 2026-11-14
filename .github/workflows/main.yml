@@ -45,11 +45,26 @@ jobs:
       - name: Run unit tests
         run: ./gradlew testDebugUnitTest
 
-      # Step 6: Build the Release and Debug APKs
+      # Step 6: Prepare persistent release keystore when configured
+      - name: Decode persistent signing keystore
+        shell: bash
+        env:
+          KS_B64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > "${{ runner.temp }}/release.jks"
+            echo "SIGNING_KEYSTORE_PATH=${{ runner.temp }}/release.jks" >> "$GITHUB_ENV"
+          fi
+
+      # Step 7: Build the Release and Debug APKs
       - name: Build Release & Debug APKs
+        env:
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: ./gradlew assembleRelease assembleDebug
 
-      # Step 7: Upload the Release APK as an artifact
+      # Step 8: Upload the Release APK as an artifact
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
