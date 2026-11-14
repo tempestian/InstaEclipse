@@ -682,7 +682,7 @@ public class Module {
 
                     // Custom Theme
                     try {
-                        if (shouldHook("IgThemeHook", ps.reso.instaeclipse.mods.ui.theme.IgThemeEngine.hasCustomTheme())) new IgThemeHook().install(hostClassLoader);
+                        if (shouldHook("IgThemeHook", FeatureFlags.customThemeEnabled)) new IgThemeHook().install(hostClassLoader);
                     } catch (Throwable ignored) {
                         ModuleLog.line("(InstaEclipse | Theme): ❌ Failed to hook");
                     }
