@@ -336,17 +336,26 @@ public class DisableVideoAutoPlayHook {
                 || "mention_thumbnail_video_play_button".equals(name);
     }
 
+    private static final java.util.concurrent.ConcurrentHashMap<Integer, Boolean> PLAY_DRAWABLE_RES_CACHE =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     private static boolean isManualVideoPlayDrawableResource(Resources resources, int resId) {
         if (resources == null || resId == 0) return false;
+        Boolean cached = PLAY_DRAWABLE_RES_CACHE.get(resId);
+        if (cached != null) return cached;
+        boolean match = false;
         try {
             String type = resources.getResourceTypeName(resId);
-            if (!"drawable".equals(type)) return false;
-
-            String name = resources.getResourceEntryName(resId);
-            return "play_button".equals(name) || "play_button_large".equals(name);
+            if ("drawable".equals(type)) {
+                String name = resources.getResourceEntryName(resId);
+                match = "play_button".equals(name) || "play_button_large".equals(name);
+            }
         } catch (Resources.NotFoundException ignored) {
-            return false;
+            match = false;
         }
+        if (PLAY_DRAWABLE_RES_CACHE.size() > 4096) PLAY_DRAWABLE_RES_CACHE.clear();
+        PLAY_DRAWABLE_RES_CACHE.put(resId, match);
+        return match;
     }
 
     private static String resourceEntryName(View view) {

@@ -25,6 +25,30 @@ public class HideSuggestedFeedItemsHook {
     // "has_liked" getter: Media.()Boolean on IG 447+, LiveTreeMediaDict.()Boolean on <= 446 (436)
     // — reached through the Media field of that type. Resolved once at install (#249).
     private static volatile Method hasLikedGetter;
+    private static final java.util.concurrent.ConcurrentHashMap<Class<?>, FeedItemFields> FIELD_CACHE =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    private static final class FeedItemFields {
+        final Field[] mediaFields;
+        final Field[] threadsFields;
+
+        FeedItemFields(Class<?> cls) {
+            java.util.List<Field> m = new java.util.ArrayList<>(2);
+            java.util.List<Field> t = new java.util.ArrayList<>(2);
+            for (Field f : ps.reso.instaeclipse.utils.core.SafeReflect.fields(cls)) {
+                String typeName = f.getType().getSimpleName();
+                if ("Media".equals(typeName)) {
+                    f.setAccessible(true);
+                    m.add(f);
+                } else if (typeName.contains("Threads") || typeName.startsWith("TextApp") || typeName.startsWith("XDTTextApp")) {
+                    f.setAccessible(true);
+                    t.add(f);
+                }
+            }
+            this.mediaFields = m.toArray(new Field[0]);
+            this.threadsFields = t.toArray(new Field[0]);
+        }
+    }
 
     public void install(DexKitBridge bridge, ClassLoader classLoader) {
         XC_MethodHook filterHook = new XC_MethodHook() {
@@ -40,25 +64,20 @@ public class HideSuggestedFeedItemsHook {
                 // optional fields is populated per server-sent unit. A real post always
                 // has its Media field set; every suggestion/injection type (clips netego,
                 // suggested users, Threads cross-promo units, ...) leaves it null.
+                FeedItemFields fields = FIELD_CACHE.computeIfAbsent(result.getClass(), FeedItemFields::new);
                 boolean hasMedia = false;
                 boolean isThreadsUnit = false;
                 Object media = null;
-                for (Field f : ps.reso.instaeclipse.utils.core.SafeReflect.fields(result.getClass())) {
-                    String typeName = f.getType().getSimpleName();
-                    if (typeName.equals("Media")) {
+                for (Field f : fields.mediaFields) {
+                    try {
+                        media = f.get(result);
+                        if (media != null) { hasMedia = true; break; }
+                    } catch (Throwable ignored) {}
+                }
+                if (!hasMedia && FeatureFlags.hideThreadsSuggestions) {
+                    for (Field f : fields.threadsFields) {
                         try {
-                            f.setAccessible(true);
-                            media = f.get(result);
-                            if (media != null) { hasMedia = true; break; }
-                        } catch (Throwable ignored) {}
-                    } else if (typeName.contains("Threads") || typeName.startsWith("TextApp") || typeName.startsWith("XDTTextApp")) {
-                        // Threads-in-feed cross-promo unit types (ThreadsInFeedUnit...,
-                        // TextApp...UnitDictImpl, XDTTextApp...UnitDictImpl) — matched by
-                        // simple name since these are stable, unobfuscated GraphQL-generated
-                        // class names, unlike the surrounding obfuscated field names.
-                        try {
-                            f.setAccessible(true);
-                            if (f.get(result) != null) isThreadsUnit = true;
+                            if (f.get(result) != null) { isThreadsUnit = true; break; }
                         } catch (Throwable ignored) {}
                     }
                 }

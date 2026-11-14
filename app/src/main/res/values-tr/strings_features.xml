@@ -5,4 +5,10 @@
     <string name="feat_search_no_results">Eşleşen özellik yok</string>
     <string name="feat_count_on">%1$d açık</string>
     <string name="feat_count_off">Kapalı</string>
+
+    <!-- Performans ve A72 Lite Hazır Ayarı -->
+    <string name="ig_dialog_perf_active_hooks_only">Sadece aktif hooklar (kullanılmayanları atla; Instagram yeniden başlat)</string>
+    <string name="ig_dialog_perf_lite_mode">Hafif Performans Modu (QPL/Loom/QP telemetrisini engelle)</string>
+    <string name="ig_dialog_perf_apply_preset">A72 Lite Önerilen Ayarları Uygula</string>
+    <string name="ig_dialog_perf_preset_applied">A72 Lite ayarları uygulandı. Hooklar için Instagram\'ı yeniden başlatın.</string>
 </resources>

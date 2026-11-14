@@ -20,7 +20,7 @@ public final class JitGuard {
     private static final int K_ACC_COMPILE_DONT_BOTHER = 0x02000000; // art/libdexfile/dex/modifiers.h
     private static final int ACCESS_FLAGS_OFFSET = 4;                  // ArtMethod: declaring_class_, access_flags_
 
-    private static int calls;
+    private static final java.util.concurrent.atomic.AtomicInteger calls = new java.util.concurrent.atomic.AtomicInteger();
     private static boolean broken;
     private static final Set<Class<?>> done = Collections.synchronizedSet(Collections.newSetFromMap(new IdentityHashMap<>()));
     private static Field backtrace, artMethod;
@@ -32,11 +32,11 @@ public final class JitGuard {
     private static volatile IdentityHashMap<Object, Boolean> seen = new IdentityHashMap<>();
 
     /** Called first thing in every hook callback with the hooked member. The first call for each
-     *  member scans right away (its stub is on the stack now); after that every 64th call samples. */
+     *  member scans right away (its stub is on the stack now); after that every 4096th call samples. */
     public static void tick(Object member) {
         if (broken) return;
         boolean first = member != null && !seen.containsKey(member);
-        if (!first && ((++calls) & 0x3F) != 0) return;
+        if (!first && (calls.incrementAndGet() & 0xFFF) != 0) return;
         if (first) {
             synchronized (JitGuard.class) {
                 IdentityHashMap<Object, Boolean> next = new IdentityHashMap<>(seen);

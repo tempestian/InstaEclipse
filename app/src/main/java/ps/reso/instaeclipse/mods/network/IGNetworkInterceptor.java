@@ -127,59 +127,59 @@ public class IGNetworkInterceptor {
 
                                 if (uri != null && uri.getPath() != null) {
                                     final String host = uri.getHost(); // null for opaque/relative URIs — guard before use
+                                    final String path = uri.getPath();
                                     boolean shouldDrop = false;
 
 
                                     // Don't save searches (#280): the server keeps Recent from these
                                     if (FeatureFlags.disableSearchHistory) {
-                                        shouldDrop |= uri.getPath().contains("/fbsearch/register_recent_search_click/");
+                                        shouldDrop |= path.contains("/fbsearch/register_recent_search_click/");
                                     }
 
                                     // Ghost Mode URIs
                                     if (FeatureFlags.isGhostSeen) {
-                                        shouldDrop |= uri.getPath().contains("/threads/") && uri.getPath().contains("/opened")
-                                                && !ps.reso.instaeclipse.utils.ghost.ReadReceiptWhitelist.pathMentionsAllowed(uri.getPath());
+                                        shouldDrop |= path.contains("/threads/") && path.contains("/opened")
+                                                && !ps.reso.instaeclipse.utils.ghost.ReadReceiptWhitelist.pathMentionsAllowed(path);
                                     }
                                     if (FeatureFlags.keepEphemeralMessages) {
-                                        shouldDrop |= uri.getPath().contains("/mark_ephemeral_item_ranges_viewed");
+                                        shouldDrop |= path.contains("/mark_ephemeral_item_ranges_viewed");
                                     }
                                     if (FeatureFlags.isGhostScreenshot) {
-                                        shouldDrop |= uri.getPath().endsWith("/screenshot/") || uri.getPath().endsWith("/ephemeral_screenshot/");
+                                        shouldDrop |= path.endsWith("/screenshot/") || path.endsWith("/ephemeral_screenshot/");
                                     }
                                     if (FeatureFlags.isGhostViewOnce) {
-                                        shouldDrop |= uri.getPath().endsWith("/item_replayed/");
-                                        shouldDrop |= (uri.getPath().contains("/direct") && uri.getPath().endsWith("/item_seen/"));
+                                        shouldDrop |= path.endsWith("/item_replayed/");
+                                        shouldDrop |= (path.contains("/direct") && path.endsWith("/item_seen/"));
                                     }
                                     if (FeatureFlags.isGhostStory) {
                                         // Version-agnostic: getPath() excludes the ?reel=... query, so it
                                         // reads /api/vN/media/seen/ on both old (v2) and new (447: v1) builds.
-                                        shouldDrop |= uri.getPath().contains("/media/seen/");
+                                        shouldDrop |= path.contains("/media/seen/");
                                         FeatureStatusTracker.setHooked("GhostStories");
                                     }
                                     if (FeatureFlags.isGhostLive) {
-                                        shouldDrop |= uri.getPath().contains("/heartbeat_and_get_viewer_count/");
+                                        shouldDrop |= path.contains("/heartbeat_and_get_viewer_count/");
                                         FeatureStatusTracker.setHooked("GhostLive");
                                     }
                                     // Remove Meta AI (#179): stop Meta AI from replying/loading.
                                     if (FeatureFlags.removeMetaAI) {
-                                        String p = uri.getPath();
-                                        shouldDrop |= p.contains("/ig_meta_ai_side_chat_send_contextual_query/")
-                                                || p.contains("/ig_meta_ai_side_chat_new_session/")
-                                                || p.contains("/create_ig_meta_ai_side_chat/")
-                                                || p.contains("/genai/response")
-                                                || (uri.getHost() != null && uri.getHost().contains("aistudio.instagram.com"));
+                                        shouldDrop |= path.contains("/ig_meta_ai_side_chat_send_contextual_query/")
+                                                || path.contains("/ig_meta_ai_side_chat_new_session/")
+                                                || path.contains("/create_ig_meta_ai_side_chat/")
+                                                || path.contains("/genai/response")
+                                                || (host != null && host.contains("aistudio.instagram.com"));
                                     }
 
                                     // Distraction Free
                                     if (FeatureFlags.disableStories) {
-                                        shouldDrop |= uri.getPath().contains("/feed/reels_tray/")
-                                                || uri.getPath().contains("feed/get_latest_reel_media/")
-                                                || uri.getPath().contains("direct_v2/pending_inbox/?visual_message")
-                                                || uri.getPath().contains("stories/hallpass/")
-                                                || uri.getPath().contains("/api/v1/feed/reels_media_stream/");
+                                        shouldDrop |= path.contains("/feed/reels_tray/")
+                                                || path.contains("feed/get_latest_reel_media/")
+                                                || path.contains("direct_v2/pending_inbox/?visual_message")
+                                                || path.contains("stories/hallpass/")
+                                                || path.contains("/api/v1/feed/reels_media_stream/");
                                     }
                                     if (FeatureFlags.disableFeed) {
-                                        shouldDrop |= uri.getPath().endsWith("/feed/timeline/");
+                                        shouldDrop |= path.endsWith("/feed/timeline/");
                                     }
                                     // Full Disable Reels takes precedence over the except-DM exception:
                                     // when it is on, every clips endpoint is dropped — including
@@ -188,62 +188,77 @@ public class IGNetworkInterceptor {
                                     // allowed and only the reels feed/discover is dropped; when it is OFF,
                                     // full Disable Reels drops every clips endpoint including clips/items/.
                                     if (FeatureFlags.disableReels && !FeatureFlags.disableReelsExceptDM) {
-                                        shouldDrop |= uri.getPath().endsWith("/qp/batch_fetch/")
-                                                || uri.getPath().contains("api/v1/clips")
-                                                || uri.getPath().contains("clips")
-                                                || uri.getPath().contains("mixed_media")
-                                                || uri.getPath().contains("mixed_media/discover/stream/");
+                                        shouldDrop |= path.endsWith("/qp/batch_fetch/")
+                                                || path.contains("api/v1/clips")
+                                                || path.contains("clips")
+                                                || path.contains("mixed_media")
+                                                || path.contains("mixed_media/discover/stream/");
                                     }
                                     if (FeatureFlags.disableReelsExceptDM) {
-                                        if (uri.getPath().startsWith("/api/v1/direct_v2/")) {
+                                        if (path.startsWith("/api/v1/direct_v2/")) {
                                             return;
                                         }
-                                        shouldDrop |= (uri.getPath().startsWith("/api/v1/clips/") && uri.getQuery() != null
+                                        shouldDrop |= (path.startsWith("/api/v1/clips/") && uri.getQuery() != null
                                                 && (uri.getQuery().contains("next_media_ids=")
                                                 || uri.getQuery().contains("max_id=")))
-                                                || uri.getPath().contains("/clips/discover/")
-                                                || uri.getPath().contains("/mixed_media/discover/stream/");
+                                                || path.contains("/clips/discover/")
+                                                || path.contains("/mixed_media/discover/stream/");
                                     }
                                     if (FeatureFlags.disableExplore) {
-                                        shouldDrop |= uri.getPath().contains("/discover/topical_explore")
-                                                || uri.getPath().contains("/discover/topical_explore_stream")
-                                                || (host != null && host.contains("i.instagram.com") && uri.getPath().contains("/api/v1/fbsearch/top_serp/"));
+                                        shouldDrop |= path.contains("/discover/topical_explore")
+                                                || path.contains("/discover/topical_explore_stream")
+                                                || (host != null && host.contains("i.instagram.com") && path.contains("/api/v1/fbsearch/top_serp/"));
                                     }
                                     // Suggested accounts under the DM inbox (#282): the inbox's
                                     // "empty state" unit carries them; the chat list is unaffected.
                                     if (FeatureFlags.hideDmSuggestions) {
-                                        shouldDrop |= uri.getPath().contains("/dynamic_onboarding/get_direct_empty_state/");
+                                        shouldDrop |= path.contains("/dynamic_onboarding/get_direct_empty_state/");
                                     }
                                     if (FeatureFlags.disableComments) {
-                                        shouldDrop |= uri.getPath().contains("/api/v1/media/") && uri.getPath().contains("comments/");
+                                        shouldDrop |= path.contains("/api/v1/media/") && path.contains("comments/");
                                     }
 
                                     // Ads
                                     if (FeatureFlags.isAdBlockEnabled) {
-                                        shouldDrop |= uri.getPath().contains("profile_ads/get_profile_ads/")
-                                                || uri.getPath().contains("/async_ads/")
-                                                || uri.getPath().contains("/feed/injected_reels_media/")
-                                                || uri.getPath().equals("/api/v1/ads/graphql/");
+                                        shouldDrop |= path.contains("profile_ads/get_profile_ads/")
+                                                || path.contains("/async_ads/")
+                                                || path.contains("/feed/injected_reels_media/")
+                                                || path.equals("/api/v1/ads/graphql/");
                                     }
 
                                     // Analytics
                                     if (FeatureFlags.isAnalyticsBlocked) {
                                         shouldDrop |= (host != null && (host.contains("graph.instagram.com")
                                                 || host.contains("graph.facebook.com")))
-                                                || uri.getPath().contains("/logging_client_events");
+                                                || path.contains("/logging_client_events");
+                                    }
+
+                                    // Lite Performance Mode: drop background profiling, QPL, QP promos, zero-rating & trace uploads
+                                    if (FeatureFlags.litePerformanceMode) {
+                                        shouldDrop |= path.contains("/api/v1/loom/")
+                                                || path.contains("/loom/")
+                                                || path.contains("/api/v1/qpl/")
+                                                || path.contains("/qpl/")
+                                                || path.contains("/qp/batch_fetch/")
+                                                || path.contains("/api/v1/qp/")
+                                                || path.contains("/api/v1/zr/")
+                                                || path.contains("/api/v1/analytics/")
+                                                || path.contains("/client_telemetry/")
+                                                || path.contains("/api/v1/fbsearch/suggested_searches/")
+                                                || (host != null && host.startsWith("rupload.")
+                                                && (path.contains("log") || path.contains("trace") || path.contains("loom") || path.contains("crash") || path.contains("analytics")));
                                     }
 
                                     // Misc
                                     if (FeatureFlags.spoofLastSeen) {
-                                        String p = uri.getPath();
-                                        shouldDrop |= p.contains("/push/setForegroundState/")
-                                                || p.contains("/accounts/update_active_status")
-                                                || p.contains("/notes/create_note")
-                                                || p.contains("/accounts/set_presence_disabled")
-                                                || p.contains("/update_active_status")
-                                                || p.contains("/banyan/banyan/")
-                                                || p.endsWith("/last_active/")
-                                                || p.contains("/presence/");
+                                        shouldDrop |= path.contains("/push/setForegroundState/")
+                                                || path.contains("/accounts/update_active_status")
+                                                || path.contains("/notes/create_note")
+                                                || path.contains("/accounts/set_presence_disabled")
+                                                || path.contains("/update_active_status")
+                                                || path.contains("/banyan/banyan/")
+                                                || path.endsWith("/last_active/")
+                                                || path.contains("/presence/");
                                         FeatureStatusTracker.setHooked("SpoofLastSeen");
                                     }
                                     // NOTE: Disable Repost is handled at the UI/action level in
@@ -251,8 +266,8 @@ public class IGNetworkInterceptor {
                                     // request is ineffective because IG applies the repost optimistically
                                     // client-side, so the repost completes even when the request is dropped.
                                     if (FeatureFlags.disableDiscoverPeople) {
-                                        shouldDrop |= uri.getPath().contains("/discover/ayml/");
-                                        shouldDrop |= uri.getPath().contains("discover/chaining/");
+                                        shouldDrop |= path.contains("/discover/ayml/");
+                                        shouldDrop |= path.contains("discover/chaining/");
                                         FeatureStatusTracker.setHooked("DisableDiscoverPeople");
                                     }
 

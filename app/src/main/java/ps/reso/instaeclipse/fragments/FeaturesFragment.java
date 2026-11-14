@@ -261,6 +261,10 @@ public class FeaturesFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         fragmentView = inflater.inflate(R.layout.fragment_features, container, false);
         localCache = ps.reso.instaeclipse.utils.core.CommonUtils.companionCache(requireContext());
+        if (ps.reso.instaeclipse.utils.feature.LitePreset.seedIfFirstRun(localCache)) {
+            ps.reso.instaeclipse.utils.feature.LitePreset.writeToPrefs(localCache, System.currentTimeMillis());
+            makeLocalCacheWorldReadable();
+        }
 
         // Request POST_NOTIFICATIONS permission (required API 33+ for download progress notifications)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -1757,6 +1761,9 @@ public class FeaturesFragment extends Fragment {
                 createExtrasSwitch("#0A84FF", "fixNotificationRegistration"),
                 createSwitch(R.drawable.ic_notification, "#0A84FF", getString(R.string.ig_dialog_misc_show_feature_toasts), "showFeatureToasts"),
                 createSwitch(R.drawable.ic_link, "#0A84FF", getString(R.string.ig_dialog_open_links_externally), "openLinksExternally"),
+                createSwitch(R.drawable.ic_tune, "#30D158", getString(R.string.ig_dialog_perf_active_hooks_only), "activeHooksOnly"),
+                createSwitch(R.drawable.ic_sparkle, "#30D158", getString(R.string.ig_dialog_perf_lite_mode), "litePerformanceMode"),
+                createClickable(R.drawable.ic_restart, "#30D158", getString(R.string.ig_dialog_perf_apply_preset), this::applyLitePresetFromCompanion),
                 createClickable(R.drawable.ic_link, "#0A84FF", shareDomainLabel(), this::showShareDomainDialog)
         ));
         // Auto-clear cache (mirrors the in-IG dialog's Tools section).
@@ -1769,6 +1776,17 @@ public class FeaturesFragment extends Fragment {
         ));
 
         return defs;
+    }
+
+    private void applyLitePresetFromCompanion() {
+        for (String k : ps.reso.instaeclipse.utils.feature.LitePreset.PRESET_BOOL_KEYS) {
+            putBoolPref(k, true);
+        }
+        putIntPref("autoClearCacheSizeMb", 100);
+        localCache.edit().putBoolean(ps.reso.instaeclipse.utils.feature.LitePreset.PREF_INITIALIZED, true).apply();
+        refreshVisibleMenu();
+        ps.reso.instaeclipse.utils.toast.IeToast.makeText(
+                requireContext(), getString(R.string.ig_dialog_perf_preset_applied), Toast.LENGTH_LONG).show();
     }
 
     private void openInstagram() {
@@ -2591,10 +2609,16 @@ public class FeaturesFragment extends Fragment {
     // STAGING LOGIC
     // =========================================================
 
+    private static boolean defaultFlagValue(String prefKey) {
+        return "downloaderUseOriginal".equals(prefKey)
+                || "activeHooksOnly".equals(prefKey)
+                || "litePerformanceMode".equals(prefKey);
+    }
+
     /** A switch applies at once, like in Instagram's menu: saved, stamped and sent to Instagram
      *  live (or picked up by Instagram's sync on its next start / resume). No Save step. */
     private void stageChange(String prefKey, boolean isChecked) {
-        if (localCache.getBoolean(prefKey, "downloaderUseOriginal".equals(prefKey)) == isChecked) return;
+        if (localCache.getBoolean(prefKey, defaultFlagValue(prefKey)) == isChecked) return;
         putBoolPref(prefKey, isChecked);
     }
 
@@ -2622,7 +2646,7 @@ public class FeaturesFragment extends Fragment {
     private boolean getCurrentState(String prefKey) {
         if (prefKey == null) return false;
         if (stagedChanges.containsKey(prefKey)) return stagedChanges.get(prefKey);
-        return localCache.getBoolean(prefKey, "downloaderUseOriginal".equals(prefKey));
+        return localCache.getBoolean(prefKey, defaultFlagValue(prefKey));
     }
 
     // =========================================================

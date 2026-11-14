@@ -5,4 +5,10 @@
     <string name="feat_search_no_results">No matching features</string>
     <string name="feat_count_on">%1$d on</string>
     <string name="feat_count_off">Off</string>
+
+    <!-- Performance & A72 Lite Preset -->
+    <string name="ig_dialog_perf_active_hooks_only">Active hooks only (skip unused hooks on startup; restart IG)</string>
+    <string name="ig_dialog_perf_lite_mode">Lite Performance Mode (block QPL/Loom/QP telemetry &amp; bloat)</string>
+    <string name="ig_dialog_perf_apply_preset">Apply A72 Lite Preset (Recommended)</string>
+    <string name="ig_dialog_perf_preset_applied">A72 Lite Preset applied. Restart Instagram for hook changes.</string>
 </resources>

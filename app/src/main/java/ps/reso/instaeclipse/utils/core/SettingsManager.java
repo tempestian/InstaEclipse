@@ -203,6 +203,10 @@ public class SettingsManager {
         editor.putString("downloaderCustomPath", FeatureFlags.downloaderCustomPath);
         editor.putString("downloaderCustomUri",  FeatureFlags.downloaderCustomUri);
 
+        // Performance & Battery (Lite Fork)
+        editor.putBoolean("activeHooksOnly", FeatureFlags.activeHooksOnly);
+        editor.putBoolean("litePerformanceMode", FeatureFlags.litePerformanceMode);
+
         // Custom Theme
         editor.putBoolean("customThemeEnabled", FeatureFlags.customThemeEnabled);
         editor.putInt("themePresetId", FeatureFlags.themePresetId);
@@ -243,6 +247,9 @@ public class SettingsManager {
     public static void loadAllFlags(Context context) {
         if (prefs == null) {
             prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        }
+        if (ps.reso.instaeclipse.utils.feature.LitePreset.seedIfFirstRun(prefs)) {
+            ps.reso.instaeclipse.utils.feature.LitePreset.writeToPrefs(prefs, 0);
         }
 
         FeatureFlags.isDevEnabled = prefs.getBoolean("isDevEnabled", false);
@@ -417,6 +424,10 @@ public class SettingsManager {
         FeatureFlags.customEmojiPath          = prefs.getString("customEmojiPath", "");
         FeatureFlags.downloaderCustomPath     = prefs.getString("downloaderCustomPath", "");
         FeatureFlags.downloaderCustomUri      = prefs.getString("downloaderCustomUri",  "");
+
+        // Performance & Battery (Lite Fork)
+        FeatureFlags.activeHooksOnly          = prefs.getBoolean("activeHooksOnly", true);
+        FeatureFlags.litePerformanceMode      = prefs.getBoolean("litePerformanceMode", true);
 
         // Custom Theme
         FeatureFlags.customThemeEnabled = prefs.getBoolean("customThemeEnabled", false);

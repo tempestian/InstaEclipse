@@ -160,6 +160,8 @@ public class SettingsBackupManager {
         s.put("spoofLabel", FeatureFlags.spoofLabel);
         s.put("spoofRecent", FeatureFlags.spoofRecent);
         s.put("startupTab", FeatureFlags.startupTab);
+        s.put("activeHooksOnly", FeatureFlags.activeHooksOnly);
+        s.put("litePerformanceMode", FeatureFlags.litePerformanceMode);
         root.put("settings", s);
         return root.toString(2);
     }
@@ -314,6 +316,8 @@ public class SettingsBackupManager {
         if (s.has("copyMediaLink"))          FeatureFlags.copyMediaLink          = s.getBoolean("copyMediaLink");
         if (s.has("saveInstants"))           FeatureFlags.saveInstants           = s.getBoolean("saveInstants");
         if (s.has("uploadInstants"))         FeatureFlags.uploadInstants         = s.getBoolean("uploadInstants");
+        if (s.has("activeHooksOnly"))        FeatureFlags.activeHooksOnly        = s.getBoolean("activeHooksOnly");
+        if (s.has("litePerformanceMode"))    FeatureFlags.litePerformanceMode    = s.getBoolean("litePerformanceMode");
     }
 
     private static double parseDouble(Object raw, double fallback) {

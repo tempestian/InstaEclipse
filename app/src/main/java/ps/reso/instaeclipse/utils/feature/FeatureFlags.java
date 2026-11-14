@@ -211,4 +211,8 @@ public class FeatureFlags {
     public static volatile String  customEmojiPath = "";        // path to the user-picked EmojiCompat emoji font
     public static volatile String  downloaderCustomPath = "";   // human-readable display path
     public static volatile String  downloaderCustomUri  = "";   // SAF tree URI string for actual writes
+
+    // Performance & Battery (Lite Fork)
+    public static volatile boolean activeHooksOnly = true;      // install only hooks needed by enabled features
+    public static volatile boolean litePerformanceMode = true;  // drop QPL/Loom/telemetry/QP background traffic
 }
