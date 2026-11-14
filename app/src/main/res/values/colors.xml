@@ -31,18 +31,18 @@
     <color name="ie_tertiary_container">#5C1E2C</color>
     <color name="ie_on_tertiary_container">#FFD9E0</color>
 
-    <color name="ie_background">#17171B</color>
-    <color name="ie_surface">#17171B</color>
-    <color name="ie_on_surface">#F2F2F5</color>
-    <color name="ie_surface_variant">#2C2C34</color>
-    <color name="ie_on_surface_variant">#B8B8C0</color>
-    <color name="ie_surface_lowest">#121216</color>
-    <color name="ie_surface_low">#1C1C22</color>
-    <color name="ie_surface_container">#202027</color>
-    <color name="ie_surface_high">#26262E</color>
-    <color name="ie_surface_highest">#303038</color>
-    <color name="ie_outline">#45454F</color>
-    <color name="ie_outline_variant">#2C2C34</color>
+    <color name="ie_background">#000000</color>
+    <color name="ie_surface">#000000</color>
+    <color name="ie_on_surface">#F4F4F8</color>
+    <color name="ie_surface_variant">#1F1F27</color>
+    <color name="ie_on_surface_variant">#A8A8B4</color>
+    <color name="ie_surface_lowest">#000000</color>
+    <color name="ie_surface_low">#0A0A0E</color>
+    <color name="ie_surface_container">#111116</color>
+    <color name="ie_surface_high">#18181F</color>
+    <color name="ie_surface_highest">#22222A</color>
+    <color name="ie_outline">#3A3A46</color>
+    <color name="ie_outline_variant">#26262F</color>
     <color name="ie_error">#FF6B60</color>
     <color name="ie_on_error">#3A0906</color>
 </resources>

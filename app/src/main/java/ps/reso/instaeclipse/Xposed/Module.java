@@ -191,7 +191,7 @@ public class Module {
                 || FeatureFlags.disableReels || FeatureFlags.disableReelsExceptDM
                 || FeatureFlags.disableExplore || FeatureFlags.hideDmSuggestions || FeatureFlags.disableComments
                 || FeatureFlags.isAdBlockEnabled || FeatureFlags.isAnalyticsBlocked
-                || FeatureFlags.litePerformanceMode
+                || FeatureFlags.litePerformanceMode || FeatureFlags.batteryPrefetchLimiter
                 || FeatureFlags.spoofLastSeen || FeatureFlags.disableDiscoverPeople
                 || FeatureFlags.showFollowerToast || FeatureFlags.profileFollowsYouLabel;
     }

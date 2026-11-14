@@ -1763,6 +1763,7 @@ public class FeaturesFragment extends Fragment {
                 createSwitch(R.drawable.ic_link, "#0A84FF", getString(R.string.ig_dialog_open_links_externally), "openLinksExternally"),
                 createSwitch(R.drawable.ic_tune, "#30D158", getString(R.string.ig_dialog_perf_active_hooks_only), "activeHooksOnly"),
                 createSwitch(R.drawable.ic_sparkle, "#30D158", getString(R.string.ig_dialog_perf_lite_mode), "litePerformanceMode"),
+                createSwitch(R.drawable.ic_timer, "#30D158", getString(R.string.ig_dialog_perf_battery_prefetch), "batteryPrefetchLimiter"),
                 createClickable(R.drawable.ic_restart, "#30D158", getString(R.string.ig_dialog_perf_apply_preset), this::applyLitePresetFromCompanion),
                 createClickable(R.drawable.ic_link, "#0A84FF", shareDomainLabel(), this::showShareDomainDialog)
         ));
@@ -1782,8 +1783,27 @@ public class FeaturesFragment extends Fragment {
         for (String k : ps.reso.instaeclipse.utils.feature.LitePreset.PRESET_BOOL_KEYS) {
             putBoolPref(k, true);
         }
+        for (String k : ps.reso.instaeclipse.utils.feature.LitePreset.PRESET_FALSE_KEYS) {
+            putBoolPref(k, false);
+        }
         putIntPref("autoClearCacheSizeMb", 100);
+        putIntPref("feedCornerRadius", 16);
+        putIntPref("storyTrayScale", 92);
+        putIntPref("forceReelQuality", Integer.MAX_VALUE);
         localCache.edit().putBoolean(ps.reso.instaeclipse.utils.feature.LitePreset.PREF_INITIALIZED, true).apply();
+
+        // Also push bundled Developer Options (MobileConfig + HDR) overrides to Instagram
+        try (InputStream is = requireContext().getAssets().open("default_mc_overrides.json");
+             Scanner scanner = new Scanner(is, "UTF-8").useDelimiter("\\A")) {
+            String json = scanner.hasNext() ? scanner.next() : "";
+            if (!json.isEmpty()) {
+                Intent broadcast = new Intent("ps.reso.instaeclipse.ACTION_IMPORT_CONFIG");
+                broadcast.setPackage(ps.reso.instaeclipse.utils.core.CommonUtils.IG_PACKAGE_NAME);
+                broadcast.putExtra("json_content", json);
+                ps.reso.instaeclipse.utils.core.CommonUtils.broadcastToInstagram(requireContext(), broadcast);
+            }
+        } catch (Exception ignored) {}
+
         refreshVisibleMenu();
         ps.reso.instaeclipse.utils.toast.IeToast.makeText(
                 requireContext(), getString(R.string.ig_dialog_perf_preset_applied), Toast.LENGTH_LONG).show();
@@ -2612,7 +2632,8 @@ public class FeaturesFragment extends Fragment {
     private static boolean defaultFlagValue(String prefKey) {
         return "downloaderUseOriginal".equals(prefKey)
                 || "activeHooksOnly".equals(prefKey)
-                || "litePerformanceMode".equals(prefKey);
+                || "litePerformanceMode".equals(prefKey)
+                || "batteryPrefetchLimiter".equals(prefKey);
     }
 
     /** A switch applies at once, like in Instagram's menu: saved, stamped and sent to Instagram

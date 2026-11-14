@@ -101,7 +101,7 @@ public class HomeFragment extends Fragment {
             "enableVoiceDownload", "enableStickerDownload", "enableDmMediaDownload", "offerCopyImage", "offerMediaInfo", "offerPlaybackSpeed",
             "forceReelScrubber", "holdLeftSlowMotion", "maxUploadQuality", "saveInstants", "uploadInstants", "cacheStories",
             // Developer & Performance
-            "isDevEnabled", "removeBuildExpiredPopup", "activeHooksOnly", "litePerformanceMode"
+            "isDevEnabled", "removeBuildExpiredPopup", "activeHooksOnly", "litePerformanceMode", "batteryPrefetchLimiter"
     };
 
     /** Distraction keys FeaturesFragment locks while Extreme Mode is on. */

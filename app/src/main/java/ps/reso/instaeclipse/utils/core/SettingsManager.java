@@ -206,6 +206,7 @@ public class SettingsManager {
         // Performance & Battery (Lite Fork)
         editor.putBoolean("activeHooksOnly", FeatureFlags.activeHooksOnly);
         editor.putBoolean("litePerformanceMode", FeatureFlags.litePerformanceMode);
+        editor.putBoolean("batteryPrefetchLimiter", FeatureFlags.batteryPrefetchLimiter);
 
         // Custom Theme
         editor.putBoolean("customThemeEnabled", FeatureFlags.customThemeEnabled);
@@ -428,6 +429,7 @@ public class SettingsManager {
         // Performance & Battery (Lite Fork)
         FeatureFlags.activeHooksOnly          = prefs.getBoolean("activeHooksOnly", true);
         FeatureFlags.litePerformanceMode      = prefs.getBoolean("litePerformanceMode", true);
+        FeatureFlags.batteryPrefetchLimiter   = prefs.getBoolean("batteryPrefetchLimiter", true);
 
         // Custom Theme
         FeatureFlags.customThemeEnabled = prefs.getBoolean("customThemeEnabled", false);

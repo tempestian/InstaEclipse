@@ -249,6 +249,18 @@ public class IGNetworkInterceptor {
                                                 && (path.contains("log") || path.contains("trace") || path.contains("loom") || path.contains("crash") || path.contains("analytics")));
                                     }
 
+                                    // Battery Saver Prefetch Limiter: drop speculative background prefetches (keep DMs untouched)
+                                    if (FeatureFlags.batteryPrefetchLimiter && !path.startsWith("/api/v1/direct_v2/")) {
+                                        String query = uri.getQuery();
+                                        shouldDrop |= path.contains("/prefetch/")
+                                                || (query != null && (query.contains("is_prefetch=1")
+                                                || query.contains("is_prefetch=true")
+                                                || query.contains("prefetch_reason=")
+                                                || query.contains("reason=cold_start_prefetch")
+                                                || query.contains("reason=pull_to_refresh_prefetch")
+                                                || query.contains("feed_fetch_reason=prefetch")));
+                                    }
+
                                     // Misc
                                     if (FeatureFlags.spoofLastSeen) {
                                         shouldDrop |= path.contains("/push/setForegroundState/")

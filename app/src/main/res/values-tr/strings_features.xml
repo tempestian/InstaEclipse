@@ -9,6 +9,7 @@
     <!-- Performans ve A72 Lite Hazır Ayarı -->
     <string name="ig_dialog_perf_active_hooks_only">Sadece aktif hooklar (kullanılmayanları atla; Instagram yeniden başlat)</string>
     <string name="ig_dialog_perf_lite_mode">Hafif Performans Modu (QPL/Loom/QP telemetrisini engelle)</string>
-    <string name="ig_dialog_perf_apply_preset">A72 Lite Önerilen Ayarları Uygula</string>
-    <string name="ig_dialog_perf_preset_applied">A72 Lite ayarları uygulandı. Hooklar için Instagram\'ı yeniden başlatın.</string>
+    <string name="ig_dialog_perf_battery_prefetch">Pil Tasarrufu: Arka plan ön-indirmelerini (prefetch) kısıtla</string>
+    <string name="ig_dialog_perf_apply_preset">A72 Lite Pro Önerilen Ayarları Uygula (Dev Config dahil)</string>
+    <string name="ig_dialog_perf_preset_applied">A72 Lite Pro ayarları ve Geliştirici Yapılandırması uygulandı. Instagram\'ı yeniden başlatın.</string>
 </resources>

@@ -162,6 +162,7 @@ public class SettingsBackupManager {
         s.put("startupTab", FeatureFlags.startupTab);
         s.put("activeHooksOnly", FeatureFlags.activeHooksOnly);
         s.put("litePerformanceMode", FeatureFlags.litePerformanceMode);
+        s.put("batteryPrefetchLimiter", FeatureFlags.batteryPrefetchLimiter);
         root.put("settings", s);
         return root.toString(2);
     }
@@ -318,6 +319,7 @@ public class SettingsBackupManager {
         if (s.has("uploadInstants"))         FeatureFlags.uploadInstants         = s.getBoolean("uploadInstants");
         if (s.has("activeHooksOnly"))        FeatureFlags.activeHooksOnly        = s.getBoolean("activeHooksOnly");
         if (s.has("litePerformanceMode"))    FeatureFlags.litePerformanceMode    = s.getBoolean("litePerformanceMode");
+        if (s.has("batteryPrefetchLimiter")) FeatureFlags.batteryPrefetchLimiter = s.getBoolean("batteryPrefetchLimiter");
     }
 
     private static double parseDouble(Object raw, double fallback) {

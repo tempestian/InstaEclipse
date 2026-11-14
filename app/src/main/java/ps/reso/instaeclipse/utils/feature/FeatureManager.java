@@ -358,6 +358,7 @@ public class FeatureManager {
         reg(FeatureFlags.disableComments,      "DisableCommentsSection", R.string.ig_dialog_distraction_disable_comments);
         reg(FeatureFlags.activeHooksOnly,      "ActiveHooksOnly",        R.string.ig_dialog_perf_active_hooks_only);
         reg(FeatureFlags.litePerformanceMode,  "LitePerformanceMode",    R.string.ig_dialog_perf_lite_mode);
+        reg(FeatureFlags.batteryPrefetchLimiter, "BatteryPrefetchLimiter", R.string.ig_dialog_perf_battery_prefetch);
 
         if (!FeatureFlags.startupTab.isEmpty()) {
             FeatureStatusTracker.setEnabled("StartupTab", R.string.ig_dialog_extras_startup_tab);

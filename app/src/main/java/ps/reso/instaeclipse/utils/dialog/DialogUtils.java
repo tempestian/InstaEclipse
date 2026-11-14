@@ -53,13 +53,13 @@ public class DialogUtils {
     // ==== 0.7 DESIGN TOKENS ====
     // One palette drives every dialog surface so the in-IG UI reads as a single, coherent sheet.
     // Colors are ARGB ints (used directly with setColor/setTextColor — no parseColor round-trip).
-    private static final int C_SHEET    = 0xFF17171B; // bottom-sheet background (deep near-black)
-    private static final int C_CARD     = 0xFF202027; // grouped card fill (one step lighter)
-    private static final int C_PRESSED  = 0xFF2E2E37; // row pressed / highlight
-    private static final int C_HAIRLINE = 0xFF2C2C34; // dividers, borders
-    private static final int C_TEXT     = 0xFFFFFFFF; // primary text
-    private static final int C_TEXT2    = 0xFF9A9AA3; // secondary/muted text
-    private static final int C_HANDLE   = 0xFF48484A; // drag handle
+    private static final int C_SHEET    = 0xFF000000; // bottom-sheet background (AMOLED pure black)
+    private static final int C_CARD     = 0xFF101014; // grouped card fill (subtle elevated dark)
+    private static final int C_PRESSED  = 0xFF1E1E26; // row pressed / highlight
+    private static final int C_HAIRLINE = 0xFF26262F; // dividers, crisp card borders
+    private static final int C_TEXT     = 0xFFF5F5FA; // primary text
+    private static final int C_TEXT2    = 0xFFA0A0AC; // secondary/muted text
+    private static final int C_HANDLE   = 0xFF3E3E48; // drag handle
     private static final int C_DANGER   = 0xFFFF453A; // destructive accent (close, delete)
     // Primary/interactive accent (back, links, toggles): the custom theme's accent when one is on.
     private static int accent() { return ps.reso.instaeclipse.mods.ui.theme.IgThemeEngine.accentOr(0xFF0A84FF); }
@@ -71,8 +71,8 @@ public class DialogUtils {
     private static final String A_SOCIAL     = "#BF5AF2"; // purple
     private static final String A_TOOLS      = "#8E8E93"; // neutral gray
 
-    /** Card corner radius (px) — the rounded "grouped list" idiom. */
-    private static final int R_CARD = 26;
+    /** Card corner radius (px) — smooth modern grouped card radius. */
+    private static final int R_CARD = 32;
 
     @SuppressLint("UseCompatLoadingForDrawables")
     public static void showEclipseOptionsDialog(Context context) {
@@ -203,7 +203,7 @@ public class DialogUtils {
         // ---- TOOLS ---- app & account, developer, backup, restart, cache, about
         mainLayout.addView(sectionHeader(context, I18n.t(context, R.string.feat_group_tools)));
         LinearLayout tools = createGroupCard(context);
-        tools.addView(createMenuRow(context, R.drawable.ic_settings_gear, I18n.t(context, R.string.menu_app), A_TOOLS, () -> showAppOptions(context), onCount(context, "unlimitedAccounts", "fixNotificationRegistration", "showFeatureToasts", "openLinksExternally", "activeHooksOnly", "litePerformanceMode")));
+        tools.addView(createMenuRow(context, R.drawable.ic_settings_gear, I18n.t(context, R.string.menu_app), A_TOOLS, () -> showAppOptions(context), onCount(context, "unlimitedAccounts", "fixNotificationRegistration", "showFeatureToasts", "openLinksExternally", "activeHooksOnly", "litePerformanceMode", "batteryPrefetchLimiter")));
         tools.addView(createMenuRow(context, R.drawable.ic_tune, I18n.t(context, R.string.ig_dialog_menu_dev_options), A_TOOLS, () -> showDevOptions(context), onCount(context, "isDevEnabled", "removeBuildExpiredPopup")));
         tools.addView(createMenuRow(context, R.drawable.ic_save, I18n.t(context, R.string.ig_dialog_menu_backup_restore), A_TOOLS, () -> showBackupRestoreOptions(context)));
         tools.addView(createMenuRow(context, R.drawable.ic_restart, I18n.t(context, R.string.ig_dialog_menu_restart), A_TOOLS, () -> showRestartSection(context)));
@@ -242,6 +242,7 @@ public class DialogUtils {
         GradientDrawable groupBg = new GradientDrawable();
         groupBg.setColor(C_CARD);
         groupBg.setCornerRadius(R_CARD);
+        groupBg.setStroke(2, C_HAIRLINE);
         group.setBackground(groupBg);
         group.setPadding(6, 6, 6, 6);
         return group;
@@ -659,6 +660,7 @@ public class DialogUtils {
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(C_CARD);
         bg.setCornerRadius(R_CARD);
+        bg.setStroke(2, C_HAIRLINE);
         group.setBackground(bg);
         group.setPadding(6, 6, 6, 6);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
@@ -1814,9 +1816,13 @@ public class DialogUtils {
                 flagSwitch(context, R.drawable.ic_link, "#0A84FF", R.string.ig_dialog_open_links_externally, "openLinksExternally"),
                 flagSwitch(context, R.drawable.ic_tune, "#30D158", R.string.ig_dialog_perf_active_hooks_only, "activeHooksOnly"),
                 flagSwitch(context, R.drawable.ic_sparkle, "#30D158", R.string.ig_dialog_perf_lite_mode, "litePerformanceMode"),
+                flagSwitch(context, R.drawable.ic_timer, "#30D158", R.string.ig_dialog_perf_battery_prefetch, "batteryPrefetchLimiter"),
                 createActionRow(context, R.drawable.ic_restart, I18n.t(context, R.string.ig_dialog_perf_apply_preset), "#30D158", v -> {
                     ps.reso.instaeclipse.utils.feature.LitePreset.applyToFlags();
                     SettingsManager.saveAllFlags();
+                    if (Module.moduleSourceDir != null) {
+                        ConfigManager.restoreDefaultConfig(context, Module.moduleSourceDir);
+                    }
                     ps.reso.instaeclipse.utils.toast.IeToast.makeText(
                             context, I18n.t(context, R.string.ig_dialog_perf_preset_applied), Toast.LENGTH_LONG).show();
                 }),
@@ -3117,10 +3123,7 @@ public class DialogUtils {
             setClickable(true);
             setFocusable(true);
 
-            StateListDrawable bg = new StateListDrawable();
-            bg.addState(new int[]{android.R.attr.state_pressed}, new ColorDrawable(C_PRESSED));
-            bg.addState(new int[]{}, new ColorDrawable(Color.TRANSPARENT));
-            setBackground(bg);
+            setBackground(rowRipple(context, dp(context, 14)));
 
             if (iconRes != 0) {
                 addView(buildIconChip(context, iconRes, accentHex));
@@ -3128,7 +3131,7 @@ public class DialogUtils {
 
             labelView = new TextView(context);
             labelView.setText(label);
-            labelView.setTextColor(Color.WHITE);
+            labelView.setTextColor(C_TEXT);
             labelView.setTextSize(16);
             labelView.setPadding(0, 20, 16, 20);
             LayoutParams lp = new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f);
@@ -3138,10 +3141,10 @@ public class DialogUtils {
             toggle.setChecked(checked);
             toggle.setThumbTintList(new ColorStateList(
                     new int[][]{new int[]{-android.R.attr.state_enabled}, new int[]{android.R.attr.state_checked}, new int[]{}},
-                    new int[]{Color.parseColor("#555555"), accent(), Color.parseColor("#FFFFFF")}));
+                    new int[]{0xFF555560, accent(), 0xFFE8E8F0}));
             toggle.setTrackTintList(new ColorStateList(
                     new int[][]{new int[]{-android.R.attr.state_enabled}, new int[]{android.R.attr.state_checked}, new int[]{}},
-                    new int[]{Color.parseColor("#777777"), (accent() & 0x00FFFFFF) | 0x66000000, Color.parseColor("#CFD8DC")}));
+                    new int[]{0xFF2C2C34, (accent() & 0x00FFFFFF) | 0x66000000, 0xFF2C2C35}));
             toggle.setClickable(false);
             toggle.setFocusable(false);
             toggle.setOnCheckedChangeListener((b, c) -> {
